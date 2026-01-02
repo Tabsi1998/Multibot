@@ -286,6 +286,12 @@ setup_backend() {
     echo -e "${YELLOW}   → Installiere Python-Pakete...${NC}"
     source venv/bin/activate
     pip install --upgrade pip -q
+    
+    # Install emergentintegrations from custom index (required for AI features)
+    echo -e "${YELLOW}   → Installiere Emergent Integrations (für AI)...${NC}"
+    pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/ -q 2>/dev/null || true
+    
+    # Install other requirements
     pip install -r requirements.txt -q
     
     # Create .env
