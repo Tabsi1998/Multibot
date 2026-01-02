@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [botStatus, setBotStatus] = useState({ running: false, token_configured: false });
   const [guildId, setGuildId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [botLogs, setBotLogs] = useState({ logs: "", errors: "" });
+  const [showLogs, setShowLogs] = useState(false);
 
   useEffect(() => {
     fetchBotStatus();
@@ -40,6 +42,15 @@ export default function Dashboard() {
     try {
       const res = await axios.get(`${API}/bot/status`);
       setBotStatus(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchBotLogs = async () => {
+    try {
+      const res = await axios.get(`${API}/bot/logs?lines=100`);
+      setBotLogs(res.data);
     } catch (e) {
       console.error(e);
     }
