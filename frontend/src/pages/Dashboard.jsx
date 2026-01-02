@@ -232,6 +232,54 @@ export default function Dashboard() {
             </p>
           )}
           
+          {/* Bot Test Section */}
+          {botStatus.token_configured && (
+            <div className="border-t border-[#1E1F22] pt-4 mt-4">
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={testBotConfig}
+                  variant="outline"
+                  size="sm"
+                  className="border-[#5865F2] text-[#5865F2] hover:bg-[#5865F2]/10"
+                  data-testid="test-bot-btn"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Bot-Konfiguration testen
+                </Button>
+                
+                {testResult && (
+                  <div className="flex items-center gap-2">
+                    {testResult.success ? (
+                      <span className="text-[#23A559] text-sm flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4" />
+                        Alle Checks OK
+                      </span>
+                    ) : (
+                      <span className="text-[#DA373C] text-sm flex items-center gap-1">
+                        <XCircle className="h-4 w-4" />
+                        {testResult.issues?.length || 0} Problem(e)
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {testResult && !testResult.success && testResult.issues && (
+                <div className="mt-3 p-3 bg-[#DA373C]/10 rounded-lg border border-[#DA373C]/20">
+                  <p className="text-[#DA373C] text-sm font-medium mb-2">Gefundene Probleme:</p>
+                  <ul className="text-sm text-gray-300 space-y-1">
+                    {testResult.issues.map((issue, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <XCircle className="h-4 w-4 text-[#DA373C] shrink-0 mt-0.5" />
+                        {issue}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Bot Logs Section */}
           <div className="border-t border-[#1E1F22] pt-4">
             <button
