@@ -806,6 +806,152 @@ async def get_voice_stats(guild_id: str):
         "active_sessions": active_sessions
     }
 
+# ==================== TICKET SYSTEM API ====================
+
+class TicketPanelCreate(BaseModel):
+    channel_id: str
+    title: Optional[str] = "🎫 Support Tickets"
+    description: Optional[str] = "Klicke auf den Button um ein Ticket zu erstellen."
+    color: Optional[str] = "#5865F2"
+    button_label: Optional[str] = "Ticket erstellen"
+    button_emoji: Optional[str] = "🎫"
+    ticket_category: Optional[str] = None
+    ticket_name_template: Optional[str] = "ticket-{number}"
+    categories: Optional[List[Dict[str, str]]] = []
+    custom_fields: Optional[List[Dict[str, Any]]] = []
+    support_roles: Optional[List[str]] = []
+    ping_roles: Optional[List[str]] = []
+    claim_enabled: Optional[bool] = True
+    transcript_enabled: Optional[bool] = True
+
+@api_router.get("/guilds/{guild_id}/ticket-panels")
+async def list_ticket_panels(guild_id: str):
+    """List all ticket panels"""
+    from database import get_ticket_panels
+    panels = await get_ticket_panels(guild_id)
+    return {"panels": panels}
+
+@api_router.post("/guilds/{guild_id}/ticket-panels")
+async def create_ticket_panel_api(guild_id: str, panel: TicketPanelCreate):
+    """Create a ticket panel"""
+    from database import create_ticket_panel
+    result = await create_ticket_panel(guild_id, panel.dict())
+    return result
+
+@api_router.get("/guilds/{guild_id}/ticket-panels/{panel_id}")
+async def get_ticket_panel_api(guild_id: str, panel_id: str):
+    """Get a specific ticket panel"""
+    from database import get_ticket_panel
+    panel = await get_ticket_panel(panel_id)
+    if not panel:
+        raise HTTPException(status_code=404, detail="Panel not found")
+    return panel
+
+@api_router.put("/guilds/{guild_id}/ticket-panels/{panel_id}")
+async def update_ticket_panel_api(guild_id: str, panel_id: str, updates: Dict[str, Any]):
+    """Update a ticket panel"""
+    from database import update_ticket_panel
+    await update_ticket_panel(panel_id, updates)
+    return {"success": True}
+
+@api_router.delete("/guilds/{guild_id}/ticket-panels/{panel_id}")
+async def delete_ticket_panel_api(guild_id: str, panel_id: str):
+    """Delete a ticket panel"""
+    from database import delete_ticket_panel
+    deleted = await delete_ticket_panel(panel_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Panel not found")
+    return {"deleted": True}
+
+@api_router.get("/guilds/{guild_id}/tickets")
+async def list_tickets(guild_id: str, status: Optional[str] = None):
+    """List tickets"""
+    from database import get_tickets
+    tickets = await get_tickets(guild_id, status)
+    return {"tickets": tickets}
+
+@api_router.get("/guilds/{guild_id}/tickets/stats")
+async def get_tickets_stats(guild_id: str):
+    """Get ticket statistics"""
+    from database import get_ticket_stats
+    stats = await get_ticket_stats(guild_id)
+    return stats
+
+@api_router.post("/guilds/{guild_id}/tickets/{ticket_id}/claim")
+async def claim_ticket_api(guild_id: str, ticket_id: str, user_id: str):
+    """Claim a ticket"""
+    from database import claim_ticket
+    result = await claim_ticket(ticket_id, user_id)
+    if not result:
+        raise HTTPException(status_code=400, detail="Could not claim ticket")
+    return {"success": True}
+
+@api_router.post("/guilds/{guild_id}/tickets/{ticket_id}/close")
+async def close_ticket_api(guild_id: str, ticket_id: str, user_id: str):
+    """Close a ticket"""
+    from database import close_ticket
+    result = await close_ticket(ticket_id, user_id)
+    if not result:
+        raise HTTPException(status_code=400, detail="Could not close ticket")
+    return {"success": True}
+
+# ==================== MULTI TEMP VOICE CREATORS API ====================
+
+class TempCreatorCreate(BaseModel):
+    channel_id: str
+    category_id: Optional[str] = None
+    name_template: Optional[str] = "🔊 {user}'s Kanal"
+    numbering_type: Optional[str] = "number"  # number, letter, superscript, subscript, roman
+    position: Optional[str] = "bottom"  # top, bottom
+    default_limit: Optional[int] = 0
+    default_bitrate: Optional[int] = 64000
+    allow_rename: Optional[bool] = True
+    allow_limit: Optional[bool] = True
+    allow_lock: Optional[bool] = True
+    allow_hide: Optional[bool] = True
+    allow_kick: Optional[bool] = True
+    allow_permit: Optional[bool] = True
+    allow_bitrate: Optional[bool] = True
+
+@api_router.get("/guilds/{guild_id}/temp-creators")
+async def list_temp_creators(guild_id: str):
+    """List all temp voice creators"""
+    from database import get_temp_creators
+    creators = await get_temp_creators(guild_id)
+    return {"creators": creators}
+
+@api_router.post("/guilds/{guild_id}/temp-creators")
+async def create_temp_creator_api(guild_id: str, creator: TempCreatorCreate):
+    """Create a temp voice creator"""
+    from database import create_temp_creator
+    result = await create_temp_creator(guild_id, creator.dict())
+    return result
+
+@api_router.get("/guilds/{guild_id}/temp-creators/{creator_id}")
+async def get_temp_creator_api(guild_id: str, creator_id: str):
+    """Get a specific temp creator"""
+    from database import get_temp_creator
+    creator = await get_temp_creator(creator_id)
+    if not creator:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    return creator
+
+@api_router.put("/guilds/{guild_id}/temp-creators/{creator_id}")
+async def update_temp_creator_api(guild_id: str, creator_id: str, updates: Dict[str, Any]):
+    """Update a temp creator"""
+    from database import update_temp_creator
+    await update_temp_creator(creator_id, updates)
+    return {"success": True}
+
+@api_router.delete("/guilds/{guild_id}/temp-creators/{creator_id}")
+async def delete_temp_creator_api(guild_id: str, creator_id: str):
+    """Delete a temp creator"""
+    from database import delete_temp_creator
+    deleted = await delete_temp_creator(creator_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Creator not found")
+    return {"deleted": True}
+
 # Include the router
 app.include_router(api_router)
 
