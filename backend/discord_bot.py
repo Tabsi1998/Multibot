@@ -31,34 +31,12 @@ logger = logging.getLogger('discord_bot')
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ==================== AI INTEGRATION ====================
+# ==================== AI INTEGRATION (DISABLED) ====================
+# AI features temporarily disabled - can be enabled later
 
 async def get_ai_response(message: str, system_prompt: str) -> str:
-    """Get AI response using emergent integrations"""
-    try:
-        api_key = os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY')
-        if not api_key:
-            return "❌ AI ist nicht konfiguriert. Bitte füge einen API Key hinzu."
-        
-        try:
-            from emergentintegrations.llm.chat import LlmChat, UserMessage
-        except ImportError:
-            logger.warning("emergentintegrations not installed, AI features disabled")
-            return "❌ AI-Modul nicht installiert. Führe 'pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/' aus."
-        
-        chat = LlmChat(
-            api_key=api_key,
-            session_id=f"discord-{datetime.now().timestamp()}",
-            system_message=system_prompt
-        )
-        chat.with_model("openai", "gpt-4o")
-        
-        user_message = UserMessage(text=message)
-        response = await chat.send_message(user_message)
-        return response
-    except Exception as e:
-        logger.error(f"AI Error: {e}")
-        return f"❌ AI Fehler: {str(e)}"
+    """AI response - currently disabled"""
+    return "❌ AI-Feature ist derzeit deaktiviert. Wird später hinzugefügt!"
 
 # ==================== HELPER FUNCTIONS ====================
 
