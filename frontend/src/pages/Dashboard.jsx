@@ -75,11 +75,15 @@ export default function Dashboard() {
   const startBot = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/bot/start`);
-      toast.success("Bot wird gestartet...");
-      setTimeout(fetchBotStatus, 2000);
+      const res = await axios.post(`${API}/bot/start`);
+      toast.success(res.data.message || "Bot wird gestartet...");
+      setTimeout(() => {
+        fetchBotStatus();
+        fetchBotLogs();
+      }, 3000);
     } catch (e) {
       toast.error(e.response?.data?.detail || "Fehler beim Starten");
+      fetchBotLogs();
     }
     setLoading(false);
   };
