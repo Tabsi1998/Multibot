@@ -18,6 +18,9 @@ warnings_collection = db.warnings
 custom_commands_collection = db.custom_commands
 news_collection = db.news
 mod_logs_collection = db.mod_logs
+temp_channels_collection = db.temp_channels
+reaction_roles_collection = db.reaction_roles
+games_collection = db.games
 
 # Default guild config
 DEFAULT_GUILD_CONFIG = {
@@ -27,7 +30,7 @@ DEFAULT_GUILD_CONFIG = {
     "mod_log_channel": None,
     "mute_role": None,
     "warn_threshold": 3,
-    "warn_action": "mute",  # mute, kick, ban
+    "warn_action": "mute",
     # Welcome
     "welcome_enabled": False,
     "welcome_channel": None,
@@ -40,12 +43,22 @@ DEFAULT_GUILD_CONFIG = {
     "xp_per_message": 15,
     "xp_cooldown": 60,
     "level_up_channel": None,
-    "level_roles": {},  # {level: role_id}
+    "level_roles": {},
     "ignored_channels": [],
-    # Temp Channels
+    # Temp Channels - EXPANDED
     "temp_channels_enabled": False,
     "temp_channel_category": None,
-    "temp_channel_creator": None,  # Voice channel that creates temp channels
+    "temp_channel_creator": None,
+    "temp_channel_default_name": "🔊 {user}'s Kanal",
+    "temp_channel_default_limit": 0,
+    "temp_channel_default_bitrate": 64000,
+    "temp_channel_allow_rename": True,
+    "temp_channel_allow_limit": True,
+    "temp_channel_allow_lock": True,
+    "temp_channel_allow_hide": True,
+    "temp_channel_allow_kick": True,
+    "temp_channel_allow_permit": True,
+    "temp_channel_allow_bitrate": True,
     # AI
     "ai_enabled": False,
     "ai_channel": None,
@@ -53,9 +66,12 @@ DEFAULT_GUILD_CONFIG = {
     # News
     "news_channel": None,
     # Permissions
-    "command_permissions": {},  # {command: [role_ids]}
+    "command_permissions": {},
     "admin_roles": [],
     "mod_roles": [],
+    # Games
+    "games_enabled": True,
+    "games_channel": None,
 }
 
 async def get_guild_config(guild_id: str) -> dict:
@@ -63,13 +79,10 @@ async def get_guild_config(guild_id: str) -> dict:
     config = await guilds_collection.find_one({"guild_id": guild_id}, {"_id": 0})
     if not config:
         config = {**DEFAULT_GUILD_CONFIG, "guild_id": guild_id}
-        # Remove _id before returning
         insert_doc = dict(config)
         await guilds_collection.insert_one(insert_doc)
-        # Return fresh copy without _id
         config = {k: v for k, v in config.items() if k != "_id"}
     else:
-        # Merge with defaults for any missing keys
         for key, value in DEFAULT_GUILD_CONFIG.items():
             if key not in config:
                 config[key] = value
@@ -102,7 +115,6 @@ async def get_user_data(guild_id: str, user_id: str) -> dict:
         }
         insert_doc = dict(user)
         await users_collection.insert_one(insert_doc)
-        # Return fresh copy without potential _id
         user = {k: v for k, v in user.items() if k != "_id"}
     return user
 
@@ -126,7 +138,6 @@ async def add_warning(guild_id: str, user_id: str, mod_id: str, reason: str) -> 
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
     await warnings_collection.insert_one(warning)
-    # Update user warning count
     await users_collection.update_one(
         {"guild_id": guild_id, "user_id": user_id},
         {"$inc": {"warnings": 1}},
@@ -209,7 +220,6 @@ async def add_news(guild_id: str, title: str, content: str, scheduled_for: str =
     }
     insert_doc = dict(news)
     await news_collection.insert_one(insert_doc)
-    # Return without _id
     return {k: v for k, v in news.items() if k != "_id"}
 
 async def get_news(guild_id: str) -> list:
@@ -256,3 +266,150 @@ async def get_mod_logs(guild_id: str, limit: int = 50) -> list:
         {"_id": 0}
     ).sort("timestamp", -1).limit(limit).to_list(limit)
     return logs
+
+# ==================== TEMP CHANNELS ====================
+
+async def create_temp_channel(guild_id: str, channel_id: str, owner_id: str, name: str) -> dict:
+    """Create a temp channel record"""
+    from datetime import datetime, timezone
+    channel = {
+        "guild_id": guild_id,
+        "channel_id": channel_id,
+        "owner_id": owner_id,
+        "name": name,
+        "user_limit": 0,
+        "bitrate": 64000,
+        "locked": False,
+        "hidden": False,
+        "permitted_users": [],
+        "banned_users": [],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await temp_channels_collection.insert_one(channel)
+    return {k: v for k, v in channel.items() if k != "_id"}
+
+async def get_temp_channel(channel_id: str) -> dict:
+    """Get temp channel by ID"""
+    channel = await temp_channels_collection.find_one(
+        {"channel_id": channel_id},
+        {"_id": 0}
+    )
+    return channel
+
+async def get_temp_channels(guild_id: str) -> list:
+    """Get all temp channels for a guild"""
+    channels = await temp_channels_collection.find(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    ).to_list(100)
+    return channels
+
+async def update_temp_channel(channel_id: str, updates: dict) -> dict:
+    """Update temp channel"""
+    await temp_channels_collection.update_one(
+        {"channel_id": channel_id},
+        {"$set": updates}
+    )
+    return await get_temp_channel(channel_id)
+
+async def delete_temp_channel(channel_id: str) -> bool:
+    """Delete temp channel record"""
+    result = await temp_channels_collection.delete_one({"channel_id": channel_id})
+    return result.deleted_count > 0
+
+# ==================== REACTION ROLES ====================
+
+async def create_reaction_role(guild_id: str, channel_id: str, message_id: str, 
+                                emoji: str, role_id: str, role_type: str = "reaction",
+                                title: str = None, description: str = None) -> dict:
+    """Create a reaction role"""
+    from datetime import datetime, timezone
+    import uuid
+    rr = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "channel_id": channel_id,
+        "message_id": message_id,
+        "emoji": emoji,
+        "role_id": role_id,
+        "role_type": role_type,  # "reaction", "button", "dropdown"
+        "title": title,
+        "description": description,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await reaction_roles_collection.insert_one(rr)
+    return {k: v for k, v in rr.items() if k != "_id"}
+
+async def get_reaction_roles(guild_id: str) -> list:
+    """Get all reaction roles for a guild"""
+    rrs = await reaction_roles_collection.find(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    ).to_list(100)
+    return rrs
+
+async def get_reaction_role_by_message(message_id: str, emoji: str = None) -> list:
+    """Get reaction roles by message ID"""
+    query = {"message_id": message_id}
+    if emoji:
+        query["emoji"] = emoji
+    rrs = await reaction_roles_collection.find(query, {"_id": 0}).to_list(100)
+    return rrs
+
+async def delete_reaction_role(rr_id: str) -> bool:
+    """Delete a reaction role"""
+    result = await reaction_roles_collection.delete_one({"id": rr_id})
+    return result.deleted_count > 0
+
+async def delete_reaction_roles_by_message(message_id: str) -> int:
+    """Delete all reaction roles for a message"""
+    result = await reaction_roles_collection.delete_many({"message_id": message_id})
+    return result.deleted_count
+
+# ==================== GAMES ====================
+
+async def create_game(guild_id: str, channel_id: str, game_type: str, 
+                      player1_id: str, player2_id: str = None, state: dict = None) -> dict:
+    """Create a game"""
+    from datetime import datetime, timezone
+    import uuid
+    game = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "channel_id": channel_id,
+        "game_type": game_type,
+        "player1_id": player1_id,
+        "player2_id": player2_id,
+        "state": state or {},
+        "status": "waiting" if not player2_id else "active",
+        "winner_id": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await games_collection.insert_one(game)
+    return {k: v for k, v in game.items() if k != "_id"}
+
+async def get_game(game_id: str) -> dict:
+    """Get game by ID"""
+    game = await games_collection.find_one({"id": game_id}, {"_id": 0})
+    return game
+
+async def get_active_games(guild_id: str) -> list:
+    """Get all active games for a guild"""
+    games = await games_collection.find(
+        {"guild_id": guild_id, "status": {"$in": ["waiting", "active"]}},
+        {"_id": 0}
+    ).to_list(100)
+    return games
+
+async def update_game(game_id: str, updates: dict) -> dict:
+    """Update game"""
+    await games_collection.update_one(
+        {"id": game_id},
+        {"$set": updates}
+    )
+    return await get_game(game_id)
+
+async def delete_game(game_id: str) -> bool:
+    """Delete a game"""
+    result = await games_collection.delete_one({"id": game_id})
+    return result.deleted_count > 0
