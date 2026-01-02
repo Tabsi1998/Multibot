@@ -87,11 +87,12 @@ Erstelle eine Einladungs-URL unter OAuth2 → URL Generator:
 
 #### Schritt 3: Konfiguration
 
-1. Öffne das Web-Dashboard
-2. Gehe zu "Einstellungen"
-3. Füge deinen Discord Bot Token ein
-4. Optional: Füge deinen OpenAI API Key hinzu
-5. Speichere und starte den Bot
+1. Öffne das Web-Dashboard (http://localhost:3000)
+2. **Registriere dich** - Der erste Benutzer wird automatisch Admin!
+3. Gehe zu "Einstellungen"
+4. Füge deinen Discord Bot Token ein
+5. Optional: Füge deinen OpenAI API Key hinzu
+6. Speichere und starte den Bot
 
 ### Konfiguration
 
