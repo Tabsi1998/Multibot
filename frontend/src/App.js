@@ -72,6 +72,7 @@ function App() {
             <Route path="temp-channels" element={<TempChannels />} />
             <Route path="reaction-roles" element={<ReactionRoles />} />
             <Route path="games" element={<Games />} />
+            <Route path="tickets" element={<Tickets />} />
             <Route path="leveling" element={<Leveling />} />
             <Route path="welcome" element={<Welcome />} />
             <Route path="commands" element={<CustomCommands />} />
