@@ -1334,6 +1334,82 @@ async def check_scheduled_news():
     except Exception as e:
         logger.error(f"News check error: {e}")
 
+@tasks.loop(minutes=1)
+async def voice_xp_task():
+    """Award XP to users in voice channels"""
+    from database import get_active_voice_sessions, get_level_rewards
+    
+    try:
+        for guild in bot.guilds:
+            config = await get_guild_config(str(guild.id))
+            
+            if not config.get('voice_xp_enabled'):
+                continue
+            
+            xp_per_minute = config.get('voice_xp_per_minute', 5)
+            min_users = config.get('voice_xp_min_users', 2)
+            afk_channel_id = config.get('voice_afk_channel')
+            
+            # Get all voice channels with users
+            for vc in guild.voice_channels:
+                # Skip AFK channel
+                if afk_channel_id and str(vc.id) == afk_channel_id:
+                    continue
+                
+                # Count non-bot members
+                members = [m for m in vc.members if not m.bot]
+                
+                # Check minimum users
+                if len(members) < min_users:
+                    continue
+                
+                # Award XP to each member
+                for member in members:
+                    # Check if deafened or muted (optional - skip if self-muted)
+                    voice_state = member.voice
+                    if voice_state and voice_state.self_deaf:
+                        continue  # Skip self-deafened users
+                    
+                    user_data = await get_user_data(str(guild.id), str(member.id))
+                    new_xp = user_data['xp'] + xp_per_minute
+                    old_level = user_data['level']
+                    new_level = calculate_level(new_xp)
+                    
+                    # Update XP (add voice_minutes tracking)
+                    voice_minutes = user_data.get('voice_minutes', 0) + 1
+                    await update_user_data(str(guild.id), str(member.id), {
+                        'xp': new_xp,
+                        'level': new_level,
+                        'voice_minutes': voice_minutes
+                    })
+                    
+                    # Level up!
+                    if new_level > old_level:
+                        # Check level rewards
+                        rewards = await get_level_rewards(str(guild.id))
+                        for reward in rewards:
+                            if reward.get('enabled') and reward.get('level') == new_level:
+                                if reward.get('reward_type') == 'role':
+                                    role = guild.get_role(int(reward['reward_value']))
+                                    if role:
+                                        try:
+                                            await member.add_roles(role)
+                                        except:
+                                            pass
+                        
+                        # Send level up message (find appropriate channel)
+                        level_channel_id = config.get('level_up_channel')
+                        if level_channel_id:
+                            channel = guild.get_channel(int(level_channel_id))
+                            if channel:
+                                lang = config.get('language', 'de')
+                                await channel.send(f"🎉 {member.mention} ist jetzt Level **{new_level}**! (Voice XP)")
+                        
+    except Exception as e:
+        logger.error(f"Voice XP task error: {e}")
+    except Exception as e:
+        logger.error(f"News check error: {e}")
+
 def run_bot():
     token = os.environ.get('DISCORD_BOT_TOKEN')
     if not token:
