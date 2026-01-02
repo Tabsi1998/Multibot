@@ -1,5 +1,32 @@
 # Schnellstart / Quick Start Guide
 
+## 🚀 One-Command Installation
+
+### Linux / macOS
+
+```bash
+# Repository klonen
+git clone https://github.com/your-repo/multibot-command-center.git
+cd multibot-command-center
+
+# Installer ausführen (installiert alle Abhängigkeiten automatisch)
+chmod +x install.sh
+./install.sh
+
+# Starten
+./start.sh
+```
+
+### Was der Installer macht:
+1. Prüft und installiert Python 3.11+, Node.js 18+, MongoDB
+2. Erstellt Python Virtual Environment
+3. Installiert alle Python- und Node.js-Abhängigkeiten
+4. Konfiguriert Umgebungsvariablen
+5. Erstellt Start- und Stop-Skripte
+6. Optional: Erstellt Systemd-Service für Autostart
+
+---
+
 ## 🇩🇪 Deutsch
 
 ### 5-Minuten Setup
@@ -26,16 +53,18 @@
 4. Kopiere die generierte URL und öffne sie im Browser
 5. Wähle deinen Server → **Authorize**
 
-#### 3. Dashboard konfigurieren (2 Min)
+#### 3. Dashboard einrichten (2 Min)
 
-1. Öffne das Web-Dashboard
-2. Gehe zu **Einstellungen**
-3. Füge deinen **Discord Bot Token** ein
-4. Klicke auf **"Tokens speichern"**
-5. Gehe zurück zum **Dashboard**
-6. Gib deine **Server-ID** ein (Rechtsklick auf Server → Server-ID kopieren)
-7. Klicke auf **"Speichern"**
-8. Klicke auf **"Starten"** → Bot ist online! 🎉
+1. Starte mit `./start.sh`
+2. Öffne http://localhost:3000
+3. **Registriere dich** - Erster Benutzer = Admin! 👑
+4. Melde dich an
+5. Gehe zu **Einstellungen**
+6. Füge deinen **Discord Bot Token** ein
+7. Klicke auf **"Tokens speichern"**
+8. Gehe zum **Dashboard**
+9. Gib deine **Server-ID** ein
+10. Klicke auf **"Starten"** → Bot ist online! 🎉
 
 ---
 
