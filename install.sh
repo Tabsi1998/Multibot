@@ -204,13 +204,14 @@ setup_frontend() {
         npm install
     fi
     
-    # Create .env if not exists
-    if [ ! -f ".env" ]; then
-        echo -e "${CYAN}📝 Erstelle Frontend .env...${NC}"
-        cat > .env << EOF
-REACT_APP_BACKEND_URL=http://localhost:8001
+    # Create .env - use local IP for network access
+    echo -e "${CYAN}📝 Erstelle Frontend .env mit lokaler IP...${NC}"
+    cat > .env << EOF
+REACT_APP_BACKEND_URL=http://${LOCAL_IP}:8001
+HOST=0.0.0.0
+PORT=3000
 EOF
-    fi
+    echo -e "${GREEN}   Backend URL: http://${LOCAL_IP}:8001${NC}"
     
     cd ..
 }
