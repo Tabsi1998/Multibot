@@ -1951,7 +1951,7 @@ async def ticket_panel(interaction: discord.Interaction, panel_id: str):
     
     async def button_callback(interaction: discord.Interaction):
         create_view = TicketCreateView(panel_id)
-        await create_view.create_ticket.callback(create_view, interaction, button)
+        await create_view.create_ticket_btn.callback(create_view, interaction, button)
     
     button.callback = button_callback
     view.add_item(button)
