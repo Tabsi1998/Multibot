@@ -40,7 +40,11 @@ async def get_ai_response(message: str, system_prompt: str) -> str:
         if not api_key:
             return "❌ AI ist nicht konfiguriert. Bitte füge einen API Key hinzu."
         
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+        except ImportError:
+            logger.warning("emergentintegrations not installed, AI features disabled")
+            return "❌ AI-Modul nicht installiert. Führe 'pip install emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/' aus."
         
         chat = LlmChat(
             api_key=api_key,
