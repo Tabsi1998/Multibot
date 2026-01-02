@@ -369,9 +369,7 @@ class TicketCreateView(ui.View):
         self.panel_id = panel_id
     
     @ui.button(label="Ticket erstellen", style=discord.ButtonStyle.primary, emoji="🎫", custom_id="ticket_create")
-    async def create_ticket(self, interaction: discord.Interaction, button: ui.Button):
-        from database import get_ticket_panel, create_ticket, increment_ticket_counter, get_ticket_by_channel
-        
+    async def create_ticket_btn(self, interaction: discord.Interaction, button: ui.Button):
         panel = await get_ticket_panel(self.panel_id)
         if not panel:
             await interaction.response.send_message("❌ Ticket-Panel nicht gefunden!", ephemeral=True)
@@ -402,8 +400,6 @@ class TicketCreateView(ui.View):
         await self.do_create_ticket(interaction, panel, None)
     
     async def do_create_ticket(self, interaction: discord.Interaction, panel: dict, category: str):
-        from database import create_ticket, increment_ticket_counter
-        
         # Get ticket number
         ticket_number = await increment_ticket_counter(panel['id'])
         
