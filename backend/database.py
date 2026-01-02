@@ -100,7 +100,10 @@ async def get_user_data(guild_id: str, user_id: str) -> dict:
             "last_xp": None,
             "warnings": 0
         }
-        await users_collection.insert_one(user)
+        insert_doc = dict(user)
+        await users_collection.insert_one(insert_doc)
+        # Return fresh copy without potential _id
+        user = {k: v for k, v in user.items() if k != "_id"}
     return user
 
 async def update_user_data(guild_id: str, user_id: str, updates: dict) -> dict:
