@@ -367,6 +367,20 @@ async def get_reaction_role_by_message(message_id: str, emoji: str = None) -> li
     rrs = await reaction_roles_collection.find(query, {"_id": 0}).to_list(100)
     return rrs
 
+async def update_reaction_role(rr_id: str, data: dict) -> dict:
+    """Update a reaction role"""
+    # Remove fields that shouldn't be updated
+    update_data = {k: v for k, v in data.items() if k not in ["id", "_id", "guild_id", "message_id"]}
+    
+    result = await reaction_roles_collection.find_one_and_update(
+        {"id": rr_id},
+        {"$set": update_data},
+        return_document=True
+    )
+    if result:
+        return {k: v for k, v in result.items() if k != "_id"}
+    return None
+
 async def delete_reaction_role(rr_id: str) -> bool:
     """Delete a reaction role"""
     result = await reaction_roles_collection.delete_one({"id": rr_id})
