@@ -1910,8 +1910,154 @@ async def voice_xp_task():
                         
     except Exception as e:
         logger.error(f"Voice XP task error: {e}")
-    except Exception as e:
-        logger.error(f"News check error: {e}")
+
+# ==================== TICKET COMMANDS ====================
+
+ticket_group = app_commands.Group(name="ticket", description="Ticket System Befehle")
+
+@ticket_group.command(name="panel", description="Sende ein Ticket-Panel (Admin)")
+@app_commands.describe(panel_id="Die Panel-ID aus dem Dashboard")
+async def ticket_panel(interaction: discord.Interaction, panel_id: str):
+    if not interaction.user.guild_permissions.manage_guild:
+        await interaction.response.send_message("❌ Du brauchst die Berechtigung 'Server verwalten'!", ephemeral=True)
+        return
+    
+    from database import get_ticket_panel
+    
+    panel = await get_ticket_panel(panel_id)
+    if not panel:
+        await interaction.response.send_message("❌ Panel nicht gefunden!", ephemeral=True)
+        return
+    
+    # Create embed
+    embed_color = int(panel.get('color', '#5865F2').replace('#', ''), 16)
+    embed = discord.Embed(
+        title=panel.get('title', '🎫 Support Tickets'),
+        description=panel.get('description', 'Klicke auf den Button um ein Ticket zu erstellen.'),
+        color=embed_color
+    )
+    
+    if panel.get('categories') and len(panel['categories']) > 0:
+        cat_text = "\n".join([f"{c.get('emoji', '•')} **{c.get('name', '')}**" for c in panel['categories']])
+        embed.add_field(name="Kategorien", value=cat_text, inline=False)
+    
+    # Create button
+    view = ui.View(timeout=None)
+    button = ui.Button(
+        label=panel.get('button_label', 'Ticket erstellen'),
+        emoji=panel.get('button_emoji', '🎫'),
+        style=discord.ButtonStyle.primary,
+        custom_id=f"panel_create_{panel_id}"
+    )
+    
+    async def button_callback(interaction: discord.Interaction):
+        create_view = TicketCreateView(panel_id)
+        await create_view.create_ticket.callback(create_view, interaction, button)
+    
+    button.callback = button_callback
+    view.add_item(button)
+    
+    await interaction.channel.send(embed=embed, view=view)
+    await interaction.response.send_message("✅ Panel gesendet!", ephemeral=True)
+
+@ticket_group.command(name="claim", description="Beanspruche dieses Ticket")
+async def ticket_claim(interaction: discord.Interaction):
+    from database import get_ticket_by_channel, claim_ticket
+    
+    ticket = await get_ticket_by_channel(str(interaction.channel.id))
+    if not ticket:
+        await interaction.response.send_message("❌ Dies ist kein Ticket-Kanal!", ephemeral=True)
+        return
+    
+    if ticket.get('status') == 'claimed':
+        await interaction.response.send_message(f"❌ Ticket wurde bereits beansprucht!", ephemeral=True)
+        return
+    
+    await claim_ticket(ticket['id'], str(interaction.user.id))
+    
+    embed = discord.Embed(
+        title="✋ Ticket beansprucht",
+        description=f"{interaction.user.mention} hat dieses Ticket beansprucht.",
+        color=discord.Color.blue()
+    )
+    await interaction.response.send_message(embed=embed)
+
+@ticket_group.command(name="close", description="Schließe dieses Ticket")
+async def ticket_close(interaction: discord.Interaction):
+    from database import get_ticket_by_channel, close_ticket
+    
+    ticket = await get_ticket_by_channel(str(interaction.channel.id))
+    if not ticket:
+        await interaction.response.send_message("❌ Dies ist kein Ticket-Kanal!", ephemeral=True)
+        return
+    
+    await close_ticket(ticket['id'], str(interaction.user.id))
+    
+    embed = discord.Embed(
+        title="🔒 Ticket wird geschlossen",
+        description=f"Geschlossen von {interaction.user.mention}\nKanal wird in 5 Sekunden gelöscht...",
+        color=discord.Color.red()
+    )
+    await interaction.response.send_message(embed=embed)
+    
+    await asyncio.sleep(5)
+    try:
+        await interaction.channel.delete(reason=f"Ticket geschlossen von {interaction.user.name}")
+    except:
+        pass
+
+@ticket_group.command(name="add", description="Füge einen Benutzer zum Ticket hinzu")
+@app_commands.describe(user="Der Benutzer")
+async def ticket_add(interaction: discord.Interaction, user: discord.Member):
+    from database import get_ticket_by_channel
+    
+    ticket = await get_ticket_by_channel(str(interaction.channel.id))
+    if not ticket:
+        await interaction.response.send_message("❌ Dies ist kein Ticket-Kanal!", ephemeral=True)
+        return
+    
+    await interaction.channel.set_permissions(
+        user,
+        view_channel=True,
+        send_messages=True,
+        read_message_history=True
+    )
+    
+    await interaction.response.send_message(f"✅ {user.mention} wurde zum Ticket hinzugefügt.")
+
+@ticket_group.command(name="remove", description="Entferne einen Benutzer vom Ticket")
+@app_commands.describe(user="Der Benutzer")
+async def ticket_remove(interaction: discord.Interaction, user: discord.Member):
+    from database import get_ticket_by_channel
+    
+    ticket = await get_ticket_by_channel(str(interaction.channel.id))
+    if not ticket:
+        await interaction.response.send_message("❌ Dies ist kein Ticket-Kanal!", ephemeral=True)
+        return
+    
+    # Don't remove ticket creator
+    if str(user.id) == ticket.get('user_id'):
+        await interaction.response.send_message("❌ Du kannst den Ticket-Ersteller nicht entfernen!", ephemeral=True)
+        return
+    
+    await interaction.channel.set_permissions(user, overwrite=None)
+    await interaction.response.send_message(f"✅ {user.mention} wurde vom Ticket entfernt.")
+
+@ticket_group.command(name="rename", description="Benenne das Ticket um")
+@app_commands.describe(name="Neuer Name")
+async def ticket_rename(interaction: discord.Interaction, name: str):
+    from database import get_ticket_by_channel
+    
+    ticket = await get_ticket_by_channel(str(interaction.channel.id))
+    if not ticket:
+        await interaction.response.send_message("❌ Dies ist kein Ticket-Kanal!", ephemeral=True)
+        return
+    
+    old_name = interaction.channel.name
+    await interaction.channel.edit(name=name)
+    await interaction.response.send_message(f"✅ Ticket umbenannt: `{old_name}` → `{name}`")
+
+bot.tree.add_command(ticket_group)
 
 def run_bot():
     token = os.environ.get('DISCORD_BOT_TOKEN')
