@@ -61,13 +61,6 @@ export default function TempChannels() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  useEffect(() => {
-    if (guildId) {
-      fetchConfig();
-      fetchActiveChannels();
-    }
-  }, [guildId]);
-
   const fetchConfig = async () => {
     try {
       const res = await axios.get(`${API}/guilds/${guildId}`, {
@@ -89,6 +82,14 @@ export default function TempChannels() {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    if (guildId) {
+      fetchConfig();
+      fetchActiveChannels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]);
 
   const saveConfig = async () => {
     if (!guildId) {
