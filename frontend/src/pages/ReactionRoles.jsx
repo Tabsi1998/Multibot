@@ -58,12 +58,6 @@ export default function ReactionRoles() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  useEffect(() => {
-    if (guildId) {
-      fetchReactionRoles();
-    }
-  }, [guildId]);
-
   const fetchReactionRoles = async () => {
     try {
       const res = await axios.get(`${API}/guilds/${guildId}/reaction-roles`, {
@@ -74,6 +68,13 @@ export default function ReactionRoles() {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    if (guildId) {
+      fetchReactionRoles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]);
 
   const createReactionRole = async () => {
     if (!newRR.title || !newRR.channel_id || newRR.roles.length === 0) {
