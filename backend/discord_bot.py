@@ -20,8 +20,11 @@ from database import (
     create_temp_channel, get_temp_channel, get_temp_channels, update_temp_channel, delete_temp_channel,
     get_reaction_roles, get_reaction_role_by_message, create_reaction_role, delete_reaction_role,
     create_game, get_game, update_game, get_active_games,
-    get_level_rewards, get_server_data
+    get_level_rewards, get_server_data,
+    get_ticket_panels, get_ticket_panel, create_ticket, get_ticket_by_channel, 
+    claim_ticket, close_ticket, increment_ticket_counter
 )
+from database import db  # Import db for direct queries
 from translations import t
 
 # Setup logging
