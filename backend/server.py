@@ -1,17 +1,21 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Depends, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import asyncio
 import subprocess
 import sys
+import hashlib
+import secrets
+import jwt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -20,6 +24,14 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 24 * 7  # 7 days
+
+# Security
+security = HTTPBearer(auto_error=False)
 
 # Import database helpers
 from database import (
@@ -44,6 +56,62 @@ logger = logging.getLogger(__name__)
 
 # Bot process tracking
 bot_process = None
+
+# ==================== AUTH HELPERS ====================
+
+def hash_password(password: str) -> str:
+    """Hash password with SHA-256"""
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def create_jwt_token(user_id: str, username: str, is_admin: bool) -> str:
+    """Create JWT token"""
+    payload = {
+        "user_id": user_id,
+        "username": username,
+        "is_admin": is_admin,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS),
+        "iat": datetime.now(timezone.utc)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_jwt_token(token: str) -> Optional[dict]:
+    """Verify JWT token"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Optional[dict]:
+    """Get current user from JWT token"""
+    if not credentials:
+        return None
+    
+    payload = verify_jwt_token(credentials.credentials)
+    if not payload:
+        return None
+    
+    return payload
+
+async def require_auth(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Require authentication"""
+    if not credentials:
+        raise HTTPException(status_code=401, detail="Nicht authentifiziert")
+    
+    payload = verify_jwt_token(credentials.credentials)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Token ungültig oder abgelaufen")
+    
+    return payload
+
+async def require_admin(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
+    """Require admin authentication"""
+    user = await require_auth(credentials)
+    if not user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin-Berechtigung erforderlich")
+    return user
 
 # ==================== MODELS ====================
 
