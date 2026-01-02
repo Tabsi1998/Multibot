@@ -1754,6 +1754,250 @@ async def game_8ball(interaction: discord.Interaction, question: str):
     
     await interaction.response.send_message(embed=embed)
 
+@game_group.command(name="hangman", description="Spiele Galgenmännchen")
+async def hangman(interaction: discord.Interaction):
+    """Start a hangman game"""
+    words = [
+        "DISCORD", "PYTHON", "GAMING", "COMPUTER", "PROGRAMMIERUNG",
+        "TASTATUR", "BILDSCHIRM", "INTERNET", "SMARTPHONE", "KOPFHOERER",
+        "MAUS", "FENSTER", "WOLKE", "SONNE", "BLUME", "KATZE", "HUND",
+        "VOGEL", "FISCH", "BAUM", "HAUS", "AUTO", "STRASSE", "STADT"
+    ]
+    word = random.choice(words)
+    hidden = "".join(["⬜" if c.isalpha() else c for c in word])
+    
+    embed = discord.Embed(
+        title="🎯 Galgenmännchen",
+        description=f"Rate das Wort Buchstabe für Buchstabe!\n\n**Wort:** `{hidden}`\n\n**Versuche:** 6 ❤️",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="Benutzte Buchstaben", value="Keine", inline=False)
+    embed.set_footer(text="Tippe einen Buchstaben in den Chat!")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    # Store game state
+    game_data = {
+        "guild_id": str(interaction.guild.id),
+        "channel_id": str(interaction.channel.id),
+        "message_id": "",
+        "game_type": "hangman",
+        "player1_id": str(interaction.user.id),
+        "status": "active",
+        "state": {"word": word, "guessed": [], "tries": 6}
+    }
+    await create_game(game_data)
+
+@game_group.command(name="trivia", description="Quiz-Frage")
+@app_commands.describe(kategorie="Kategorie der Frage")
+@app_commands.choices(kategorie=[
+    app_commands.Choice(name="Allgemeinwissen", value="general"),
+    app_commands.Choice(name="Wissenschaft", value="science"),
+    app_commands.Choice(name="Geschichte", value="history"),
+    app_commands.Choice(name="Geographie", value="geography"),
+])
+async def trivia(interaction: discord.Interaction, kategorie: str = "general"):
+    """Answer a trivia question"""
+    questions = {
+        "general": [
+            {"q": "Wie viele Kontinente gibt es?", "a": "7", "options": ["5", "6", "7", "8"]},
+            {"q": "Welches ist das größte Säugetier?", "a": "Blauwal", "options": ["Elefant", "Blauwal", "Giraffe", "Nilpferd"]},
+            {"q": "Wie viele Planeten hat unser Sonnensystem?", "a": "8", "options": ["7", "8", "9", "10"]},
+        ],
+        "science": [
+            {"q": "Was ist H2O?", "a": "Wasser", "options": ["Sauerstoff", "Wasser", "Wasserstoff", "Helium"]},
+            {"q": "Wie viele Elemente hat das Periodensystem?", "a": "118", "options": ["100", "110", "118", "125"]},
+        ],
+        "history": [
+            {"q": "Wann fiel die Berliner Mauer?", "a": "1989", "options": ["1985", "1987", "1989", "1991"]},
+            {"q": "Wer war der erste Mensch auf dem Mond?", "a": "Neil Armstrong", "options": ["Buzz Aldrin", "Neil Armstrong", "Yuri Gagarin", "John Glenn"]},
+        ],
+        "geography": [
+            {"q": "Was ist die Hauptstadt von Australien?", "a": "Canberra", "options": ["Sydney", "Melbourne", "Canberra", "Brisbane"]},
+            {"q": "Welcher ist der längste Fluss der Welt?", "a": "Nil", "options": ["Amazonas", "Nil", "Jangtse", "Mississippi"]},
+        ]
+    }
+    
+    q_data = random.choice(questions.get(kategorie, questions["general"]))
+    random.shuffle(q_data["options"])
+    
+    embed = discord.Embed(
+        title="🧠 Quiz",
+        description=f"**{q_data['q']}**",
+        color=discord.Color.gold()
+    )
+    
+    options_text = "\n".join([f"{chr(65+i)}. {opt}" for i, opt in enumerate(q_data["options"])])
+    embed.add_field(name="Antwortmöglichkeiten", value=options_text, inline=False)
+    embed.set_footer(text="Antwort mit dem Buchstaben (A, B, C, D)")
+    
+    # Create buttons
+    view = ui.View(timeout=30)
+    for i, opt in enumerate(q_data["options"]):
+        is_correct = opt == q_data["a"]
+        btn = ui.Button(
+            label=chr(65+i),
+            style=discord.ButtonStyle.primary,
+            custom_id=f"trivia_{i}_{is_correct}"
+        )
+        async def btn_callback(inter, correct=is_correct, answer=opt):
+            if correct:
+                await inter.response.send_message(f"✅ **Richtig!** Die Antwort war: {answer}", ephemeral=False)
+            else:
+                await inter.response.send_message(f"❌ **Falsch!** Die richtige Antwort war: {q_data['a']}", ephemeral=False)
+        btn.callback = btn_callback
+        view.add_item(btn)
+    
+    await interaction.response.send_message(embed=embed, view=view)
+
+@game_group.command(name="numberguess", description="Rate eine Zahl")
+async def numberguess(interaction: discord.Interaction):
+    """Number guessing game"""
+    number = random.randint(1, 100)
+    
+    embed = discord.Embed(
+        title="🔢 Zahlenraten",
+        description="Ich denke an eine Zahl zwischen **1** und **100**!\n\nSchreibe deine Vermutung in den Chat.",
+        color=discord.Color.teal()
+    )
+    embed.add_field(name="Versuche", value="0", inline=True)
+    embed.add_field(name="Hinweis", value="Rate eine Zahl!", inline=True)
+    embed.set_footer(text="Du hast 10 Versuche!")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    # Store game
+    game_data = {
+        "guild_id": str(interaction.guild.id),
+        "channel_id": str(interaction.channel.id),
+        "game_type": "numberguess",
+        "player1_id": str(interaction.user.id),
+        "status": "active",
+        "state": {"number": number, "tries": 0, "max_tries": 10}
+    }
+    await create_game(game_data)
+
+@game_group.command(name="reaction", description="Reaktionstest")
+async def reaction_test(interaction: discord.Interaction):
+    """Reaction time test"""
+    embed = discord.Embed(
+        title="⚡ Reaktionstest",
+        description="Warte auf den grünen Button...",
+        color=discord.Color.red()
+    )
+    
+    await interaction.response.send_message(embed=embed)
+    
+    # Wait random time
+    await asyncio.sleep(random.uniform(2, 5))
+    
+    start_time = asyncio.get_event_loop().time()
+    
+    view = ui.View(timeout=5)
+    btn = ui.Button(
+        label="KLICK!",
+        style=discord.ButtonStyle.success,
+        emoji="⚡"
+    )
+    
+    async def btn_click(inter):
+        end_time = asyncio.get_event_loop().time()
+        reaction_time = int((end_time - start_time) * 1000)
+        
+        rating = "🐌 Langsam" if reaction_time > 500 else "👍 Gut" if reaction_time > 250 else "⚡ Schnell!" if reaction_time > 150 else "🔥 Unglaublich!"
+        
+        result_embed = discord.Embed(
+            title="⚡ Ergebnis",
+            description=f"{inter.user.mention} hat in **{reaction_time}ms** reagiert!\n\n{rating}",
+            color=discord.Color.green()
+        )
+        await inter.response.edit_message(embed=result_embed, view=None)
+    
+    btn.callback = btn_click
+    view.add_item(btn)
+    
+    go_embed = discord.Embed(
+        title="⚡ JETZT!",
+        description="Klicke so schnell wie möglich!",
+        color=discord.Color.green()
+    )
+    
+    await interaction.edit_original_response(embed=go_embed, view=view)
+
+@game_group.command(name="wordchain", description="Wortkette starten")
+async def wordchain(interaction: discord.Interaction):
+    """Word chain game"""
+    start_words = ["Apfel", "Baum", "Computer", "Dach", "Erde", "Fisch", "Garten", "Haus"]
+    word = random.choice(start_words)
+    
+    embed = discord.Embed(
+        title="🔗 Wortkette",
+        description=f"Finde ein Wort das mit **{word[-1].upper()}** beginnt!\n\n**Startwort:** {word}",
+        color=discord.Color.purple()
+    )
+    embed.add_field(name="Letzter Buchstabe", value=word[-1].upper(), inline=True)
+    embed.add_field(name="Wörter", value="1", inline=True)
+    embed.set_footer(text="Schreibe dein Wort in den Chat!")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    game_data = {
+        "guild_id": str(interaction.guild.id),
+        "channel_id": str(interaction.channel.id),
+        "game_type": "wordchain",
+        "player1_id": str(interaction.user.id),
+        "status": "active",
+        "state": {"last_word": word, "used_words": [word.lower()], "count": 1}
+    }
+    await create_game(game_data)
+
+@game_group.command(name="memory", description="Memory-Spiel")
+@app_commands.describe(gegner="Spiele gegen jemanden (optional)")
+async def memory_game(interaction: discord.Interaction, gegner: discord.Member = None):
+    """Memory card game"""
+    emojis = ["🎮", "🎵", "🎨", "🎭", "🎪", "🎯", "🎲", "🎰"]
+    cards = emojis * 2
+    random.shuffle(cards)
+    
+    # Create hidden board
+    board = ["❓"] * 16
+    
+    embed = discord.Embed(
+        title="🧠 Memory",
+        description=f"Finde die passenden Paare!\n\n{format_memory_board(board)}",
+        color=discord.Color.pink()
+    )
+    
+    if gegner:
+        embed.add_field(name="Spieler 1", value=interaction.user.mention, inline=True)
+        embed.add_field(name="Spieler 2", value=gegner.mention, inline=True)
+    else:
+        embed.add_field(name="Spieler", value=interaction.user.mention, inline=True)
+    
+    embed.add_field(name="Paare gefunden", value="0/8", inline=True)
+    embed.set_footer(text="Wähle zwei Karten (1-16)")
+    
+    await interaction.response.send_message(embed=embed)
+    
+    game_data = {
+        "guild_id": str(interaction.guild.id),
+        "channel_id": str(interaction.channel.id),
+        "game_type": "memory",
+        "player1_id": str(interaction.user.id),
+        "player2_id": str(gegner.id) if gegner else None,
+        "status": "active",
+        "state": {"cards": cards, "revealed": [], "pairs": 0, "current_turn": str(interaction.user.id)}
+    }
+    await create_game(game_data)
+
+def format_memory_board(board):
+    """Format memory board as string"""
+    rows = []
+    for i in range(0, 16, 4):
+        row = " ".join([f"`{j+1:2}`{board[j]}" for j in range(i, i+4)])
+        rows.append(row)
+    return "\n".join(rows)
+
 bot.tree.add_command(game_group)
 
 # ==================== INFO COMMANDS ====================
