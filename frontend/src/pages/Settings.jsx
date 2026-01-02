@@ -188,7 +188,7 @@ export default function Settings() {
 
           <Button
             onClick={saveTokens}
-            disabled={loading || (!discordToken && !openaiKey)}
+            disabled={loading || (!discordToken && !openaiKey) || !isAdmin}
             className="bg-[#5865F2] hover:bg-[#4752C4] text-white btn-press w-full"
             data-testid="save-tokens-btn"
           >
