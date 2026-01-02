@@ -12,6 +12,23 @@
 
 ---
 
+## 🚀 One-Command Installation
+
+```bash
+git clone https://github.com/your-repo/multibot-command-center.git
+cd multibot-command-center
+chmod +x install.sh && ./install.sh
+```
+
+Nach der Installation:
+```bash
+./start.sh
+```
+
+Öffne http://localhost:3000 und registriere dich. **Der erste Benutzer wird automatisch Administrator!**
+
+---
+
 ## Deutsch
 
 ### 📋 Inhaltsverzeichnis
