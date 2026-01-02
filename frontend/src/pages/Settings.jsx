@@ -83,6 +83,8 @@ export default function Settings() {
       await axios.put(`${API}/guilds/${guildId}`, {
         language: config.language,
         prefix: config.prefix,
+      }, {
+        headers: getAuthHeader(),
       });
       toast.success("Einstellungen gespeichert!");
     } catch (e) {
