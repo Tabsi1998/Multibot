@@ -585,13 +585,32 @@ async def on_message(message):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    """Temp channel management"""
+    """Temp channel management and Voice XP tracking"""
     if member.bot:
         return
     
     guild_id = str(member.guild.id)
     config = await get_guild_config(guild_id)
     
+    # ==================== VOICE XP TRACKING ====================
+    from database import start_voice_session, end_voice_session
+    
+    if config.get('voice_xp_enabled'):
+        afk_channel_id = config.get('voice_afk_channel')
+        
+        # User joined a voice channel
+        if after.channel and (not before.channel or before.channel.id != after.channel.id):
+            # Don't track AFK channel
+            if afk_channel_id and str(after.channel.id) == afk_channel_id:
+                pass
+            else:
+                await start_voice_session(guild_id, str(member.id), str(after.channel.id))
+        
+        # User left voice channel
+        if before.channel and (not after.channel or before.channel.id != after.channel.id):
+            await end_voice_session(guild_id, str(member.id))
+    
+    # ==================== TEMP CHANNEL MANAGEMENT ====================
     if not config.get('temp_channels_enabled'):
         return
     
