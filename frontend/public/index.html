@@ -21,8 +21,21 @@
         <title>MultiBot Command Center</title>
         <script src="https://assets.emergent.sh/scripts/emergent-main.js"></script>
         <style>
-            #emergent-badge { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+            #emergent-badge { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }
         </style>
+        <script>
+            // Remove emergent badge when DOM is ready
+            document.addEventListener('DOMContentLoaded', function() {
+                var badge = document.getElementById('emergent-badge');
+                if (badge) { badge.remove(); }
+            });
+            // Also use MutationObserver to catch dynamically added badges
+            var observer = new MutationObserver(function(mutations) {
+                var badge = document.getElementById('emergent-badge');
+                if (badge) { badge.remove(); }
+            });
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        </script>
         <!--
         These two scripts have been added for the Visual Edits, please do not edit or remove them
         -->
