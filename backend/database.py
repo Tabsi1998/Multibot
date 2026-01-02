@@ -77,6 +77,11 @@ DEFAULT_GUILD_CONFIG = {
     # Games
     "games_enabled": True,
     "games_channel": None,
+    # Bot Info
+    "bot_status": "online",  # online, idle, dnd, invisible
+    "bot_activity_type": "playing",  # playing, watching, listening, competing
+    "bot_activity_text": "mit /help starten",
+    "bot_embed_color": "#5865F2",
 }
 
 async def get_guild_config(guild_id: str) -> dict:
