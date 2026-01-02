@@ -220,34 +220,15 @@ EOF
 create_start_script() {
     echo -e "\n${BLUE}📜 Erstelle Start-Script...${NC}\n"
     
-    cat > start.sh << 'STARTEOF'
+    cat > start.sh << 'EOF'
 #!/bin/bash
 
 # Colors
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
-YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Get local IP
-get_local_ip() {
-    if command -v ip &> /dev/null; then
-        ip route get 1 | awk '{print $(NF-2);exit}' 2>/dev/null
-    elif command -v hostname &> /dev/null; then
-        hostname -I | awk '{print $1}' 2>/dev/null
-    elif command -v ifconfig &> /dev/null; then
-        ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -1
-    else
-        echo "localhost"
-    fi
-}
-
-LOCAL_IP=$(get_local_ip)
-[ -z "$LOCAL_IP" ] && LOCAL_IP="localhost"
-
 echo -e "${CYAN}🚀 Starte MultiBot Command Center...${NC}"
-echo -e "${CYAN}📡 Lokale IP: ${LOCAL_IP}${NC}"
-echo ""
 
 # Start MongoDB if not running
 if ! pgrep -x "mongod" > /dev/null; then
@@ -261,13 +242,8 @@ if ! pgrep -x "mongod" > /dev/null; then
     fi
 fi
 
-# Update frontend .env with current IP
-echo "REACT_APP_BACKEND_URL=http://${LOCAL_IP}:8001" > frontend/.env
-echo "HOST=0.0.0.0" >> frontend/.env
-echo "PORT=3000" >> frontend/.env
-
-# Start Backend (bind to 0.0.0.0 for network access)
-echo -e "${CYAN}🐍 Starte Backend auf 0.0.0.0:8001...${NC}"
+# Start Backend
+echo -e "${CYAN}🐍 Starte Backend...${NC}"
 cd backend
 source venv/bin/activate
 uvicorn server:app --host 0.0.0.0 --port 8001 --reload &
@@ -277,29 +253,20 @@ cd ..
 # Wait for backend
 sleep 3
 
-# Start Frontend (bind to 0.0.0.0 for network access)
-echo -e "${CYAN}⚛️  Starte Frontend auf 0.0.0.0:3000...${NC}"
+# Start Frontend
+echo -e "${CYAN}⚛️  Starte Frontend...${NC}"
 cd frontend
-HOST=0.0.0.0 PORT=3000 yarn start &
+if command -v yarn &> /dev/null; then
+    yarn start &
+else
+    npm start &
+fi
 FRONTEND_PID=$!
 cd ..
 
-echo ""
-echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                           ║${NC}"
-echo -e "${GREEN}║     ✅ MultiBot Command Center gestartet!                 ║${NC}"
-echo -e "${GREEN}║                                                           ║${NC}"
-echo -e "${GREEN}╠═══════════════════════════════════════════════════════════╣${NC}"
-echo -e "${GREEN}║                                                           ║${NC}"
-echo -e "${GREEN}║  📱 Dashboard (lokal):    http://localhost:3000           ║${NC}"
-echo -e "${GREEN}║  📱 Dashboard (Netzwerk): http://${LOCAL_IP}:3000            ${NC}"
-echo -e "${GREEN}║                                                           ║${NC}"
-echo -e "${GREEN}║  🔌 API (lokal):          http://localhost:8001           ║${NC}"
-echo -e "${GREEN}║  🔌 API (Netzwerk):       http://${LOCAL_IP}:8001            ${NC}"
-echo -e "${GREEN}║                                                           ║${NC}"
-echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
-echo ""
-echo -e "${YELLOW}💡 Andere Geräte im Netzwerk können über die IP zugreifen!${NC}"
+echo -e "\n${GREEN}✅ MultiBot Command Center gestartet!${NC}"
+echo -e "${GREEN}📱 Dashboard: http://localhost:3000${NC}"
+echo -e "${GREEN}🔌 API: http://localhost:8001${NC}"
 echo ""
 echo -e "Drücke Ctrl+C zum Beenden..."
 
@@ -308,10 +275,11 @@ trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" SIGINT SIGTERM
 
 # Wait
 wait
-STARTEOF
+EOF
     
     chmod +x start.sh
 }
+
 # Create stop script
 create_stop_script() {
     cat > stop.sh << 'EOF'
