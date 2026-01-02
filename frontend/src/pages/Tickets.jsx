@@ -166,6 +166,64 @@ export default function Tickets() {
     setNewField({ label: "", type: "text", required: false, options: [] });
   };
 
+  const openEditPanel = (panel) => {
+    setEditPanel({
+      ...panel,
+      categories: panel.categories || [],
+      custom_fields: panel.custom_fields || [],
+      support_roles: panel.support_roles || [],
+      ping_roles: panel.ping_roles || [],
+    });
+  };
+
+  const updatePanel = async () => {
+    if (!editPanel) return;
+    setLoading(true);
+    try {
+      await axios.put(`${API}/guilds/${guildId}/ticket-panels/${editPanel.id}`, editPanel, { 
+        headers: getAuthHeader() 
+      });
+      toast.success("Panel aktualisiert!");
+      setEditPanel(null);
+      fetchPanels();
+    } catch (e) {
+      toast.error("Fehler beim Aktualisieren");
+    }
+    setLoading(false);
+  };
+
+  const addCategoryToEdit = () => {
+    if (!newCategory.name) return;
+    setEditPanel({
+      ...editPanel,
+      categories: [...(editPanel.categories || []), { ...newCategory, id: Date.now().toString() }],
+    });
+    setNewCategory({ name: "", emoji: "", description: "" });
+  };
+
+  const removeCategoryFromEdit = (index) => {
+    setEditPanel({
+      ...editPanel,
+      categories: editPanel.categories.filter((_, i) => i !== index),
+    });
+  };
+
+  const addFieldToEdit = () => {
+    if (!newField.label) return;
+    setEditPanel({
+      ...editPanel,
+      custom_fields: [...(editPanel.custom_fields || []), { ...newField, id: Date.now().toString() }],
+    });
+    setNewField({ label: "", type: "text", required: false, options: [] });
+  };
+
+  const removeFieldFromEdit = (index) => {
+    setEditPanel({
+      ...editPanel,
+      custom_fields: editPanel.custom_fields.filter((_, i) => i !== index),
+    });
+  };
+
   const addCategory = () => {
     if (!newCategory.name) return;
     setNewPanel({
