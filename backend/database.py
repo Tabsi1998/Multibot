@@ -413,3 +413,133 @@ async def delete_game(game_id: str) -> bool:
     """Delete a game"""
     result = await games_collection.delete_one({"id": game_id})
     return result.deleted_count > 0
+
+# ==================== SERVER SYNC ====================
+
+server_data_collection = db.server_data
+
+async def sync_server_data(guild_id: str, roles: list, channels: list, categories: list, emojis: list) -> dict:
+    """Sync all server data (roles, channels, categories, emojis)"""
+    from datetime import datetime, timezone
+    
+    data = {
+        "guild_id": guild_id,
+        "roles": roles,
+        "channels": channels,
+        "categories": categories,
+        "emojis": emojis,
+        "last_sync": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await server_data_collection.update_one(
+        {"guild_id": guild_id},
+        {"$set": data},
+        upsert=True
+    )
+    return data
+
+async def get_server_data(guild_id: str) -> dict:
+    """Get cached server data"""
+    data = await server_data_collection.find_one(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    )
+    return data or {"guild_id": guild_id, "roles": [], "channels": [], "categories": [], "emojis": []}
+
+# ==================== LEVEL REWARDS ====================
+
+level_rewards_collection = db.level_rewards
+
+async def get_level_rewards(guild_id: str) -> list:
+    """Get all level rewards for a guild"""
+    rewards = await level_rewards_collection.find(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    ).to_list(100)
+    return rewards
+
+async def create_level_reward(guild_id: str, level: int, reward_type: str, reward_value: str, reward_name: str = None) -> dict:
+    """Create a level reward"""
+    import uuid
+    reward = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "level": level,
+        "reward_type": reward_type,  # "role", "emoji"
+        "reward_value": reward_value,  # role_id or emoji_id
+        "reward_name": reward_name,
+        "enabled": True
+    }
+    await level_rewards_collection.insert_one(reward)
+    return {k: v for k, v in reward.items() if k != "_id"}
+
+async def delete_level_reward(reward_id: str) -> bool:
+    """Delete a level reward"""
+    result = await level_rewards_collection.delete_one({"id": reward_id})
+    return result.deleted_count > 0
+
+async def toggle_level_reward(reward_id: str, enabled: bool) -> bool:
+    """Toggle a level reward"""
+    result = await level_rewards_collection.update_one(
+        {"id": reward_id},
+        {"$set": {"enabled": enabled}}
+    )
+    return result.modified_count > 0
+
+# ==================== VOICE XP TRACKING ====================
+
+voice_sessions_collection = db.voice_sessions
+
+async def start_voice_session(guild_id: str, user_id: str, channel_id: str) -> dict:
+    """Start tracking a voice session"""
+    from datetime import datetime, timezone
+    
+    session = {
+        "guild_id": guild_id,
+        "user_id": user_id,
+        "channel_id": channel_id,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "ended_at": None,
+        "xp_awarded": 0
+    }
+    
+    await voice_sessions_collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id, "ended_at": None},
+        {"$set": session},
+        upsert=True
+    )
+    return session
+
+async def end_voice_session(guild_id: str, user_id: str) -> dict:
+    """End a voice session and calculate XP"""
+    from datetime import datetime, timezone
+    
+    session = await voice_sessions_collection.find_one(
+        {"guild_id": guild_id, "user_id": user_id, "ended_at": None},
+        {"_id": 0}
+    )
+    
+    if not session:
+        return None
+    
+    ended_at = datetime.now(timezone.utc)
+    started_at = datetime.fromisoformat(session["started_at"].replace("Z", "+00:00"))
+    duration_minutes = (ended_at - started_at).total_seconds() / 60
+    
+    await voice_sessions_collection.update_one(
+        {"guild_id": guild_id, "user_id": user_id, "ended_at": None},
+        {"$set": {"ended_at": ended_at.isoformat()}}
+    )
+    
+    session["ended_at"] = ended_at.isoformat()
+    session["duration_minutes"] = duration_minutes
+    return session
+
+async def get_active_voice_sessions(guild_id: str) -> list:
+    """Get all active voice sessions"""
+    sessions = await voice_sessions_collection.find(
+        {"guild_id": guild_id, "ended_at": None},
+        {"_id": 0}
+    ).to_list(1000)
+    return sessions
+
