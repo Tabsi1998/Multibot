@@ -12,20 +12,25 @@
 
 ---
 
-## 🚀 One-Command Installation
+## 🚀 One-Command Installation (VOLLAUTOMATISCH)
 
 ```bash
 git clone https://github.com/your-repo/multibot-command-center.git
 cd multibot-command-center
 chmod +x install.sh && ./install.sh
-```
-
-Nach der Installation:
-```bash
 ./start.sh
 ```
 
-Öffne http://localhost:3000 und registriere dich. **Der erste Benutzer wird automatisch Administrator!**
+**Der Installer installiert ALLES automatisch:**
+- Python 3.11+ / Node.js 20.x / MongoDB 7.0 / Yarn
+- Alle Python- und Node.js-Pakete
+- Erstellt Start/Stop/Restart/Status Scripts
+
+Nach dem Start:
+- **Lokal:** http://localhost:3000
+- **Netzwerk:** http://DEINE-IP:3000
+
+Registriere dich - **der erste Benutzer wird automatisch Administrator!** 👑
 
 ---
 
