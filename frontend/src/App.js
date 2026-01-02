@@ -69,6 +69,8 @@ function App() {
             <Route path="moderation" element={<Moderation />} />
             <Route path="permissions" element={<Permissions />} />
             <Route path="temp-channels" element={<TempChannels />} />
+            <Route path="reaction-roles" element={<ReactionRoles />} />
+            <Route path="games" element={<Games />} />
             <Route path="leveling" element={<Leveling />} />
             <Route path="welcome" element={<Welcome />} />
             <Route path="commands" element={<CustomCommands />} />
