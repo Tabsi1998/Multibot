@@ -57,6 +57,8 @@ MultiBot Command Center ist ein umfassender Discord-Bot mit Web-Dashboard, der d
 | 💬 **Custom Commands** | Eigene Text-Commands |
 | 🤖 **KI-Chat** | ChatGPT-Integration |
 | 📰 **News** | Geplante Ankündigungen |
+| 🔐 **Login-System** | Benutzer-Authentifizierung mit JWT |
+| 👑 **Admin-System** | Erster Benutzer = Administrator |
 
 ### Installation
 
