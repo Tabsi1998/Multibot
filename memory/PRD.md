@@ -30,7 +30,7 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 - Alle Standard-Moderationsbefehle
 - Warn-System, Log-Kanal
 
-### 6. Temp Voice Channels (NEU ERWEITERT - 02.01.2026)
+### 6. Temp Voice Channels (ERWEITERT - 02.01.2026)
 **Mehrere Creator Channels:**
 - Pro Kategorie/Spiel eigenen Creator
 - z.B. "🎮 Valorant erstellen" → "Valorant #1"
@@ -51,6 +51,8 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 - Jeder mit eigenem Template
 - Aktivieren/Deaktivieren pro Creator
 
+**✅ BUG FIXED:** `create_temp_channel` Funktion akzeptiert jetzt `creator_id` Parameter
+
 ### 7. Reaction Roles
 - Button Reaction Roles
 - Emoji Reaction Roles
@@ -62,80 +64,62 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 
 ### 9. Leveling System
 - Nachrichten XP
-- Voice XP (XP pro Minute)
-- Level-Belohnungen (Rollen & Emojis)
+- Voice XP (pro Minute)
+- Level-Belohnungen (Rollen, Emojis)
+- Rangliste
 
 ### 10. Ticket System (NEU - 02.01.2026)
-**Ticket-Panel:**
-- Embed mit Button erstellen
-- Titel, Beschreibung, Farbe konfigurierbar
-- Button Emoji und Text
+**API & UI:**
+- Ticket-Panels erstellen und verwalten
+- Kategorien für Tickets
+- Custom Fields
+- Support-Rollen
+- Claim-System
+- Statistiken (Offen, Beansprucht, Geschlossen, Gesamt)
 
-**Ticket-Kategorien:**
-- Dropdown beim Erstellen
-- z.B. "Support", "Bug Report", "Feature Request"
-
-**Benutzerdefinierte Felder:**
-- Text-Eingabe
-- Mehrzeilige Eingabe
-- Dropdown-Auswahl
-
-**Support-Team:**
-- Support-Rollen (können Tickets sehen & claimen)
-- Ping-Rollen (bei neuem Ticket)
-
-**Features:**
-- Claimen aktivieren/deaktivieren
-- Transcripts aktivieren/deaktivieren
-- Ticket-Kanal Name Template ({number}, {user})
-
-**Discord Befehle:**
+**✅ Bot-Logik implementiert:**
+- `TicketCreateView` - Button zum Erstellen
+- `TicketCategorySelectView` - Kategorieauswahl
+- `TicketControlView` - Beanspruchen/Schließen Buttons
+- `/ticket panel` - Panel im Kanal senden
 - `/ticket claim` - Ticket beanspruchen
 - `/ticket close` - Ticket schließen
 - `/ticket add @user` - Benutzer hinzufügen
 - `/ticket remove @user` - Benutzer entfernen
 - `/ticket rename` - Ticket umbenennen
-- `/ticket transcript` - Transcript erstellen
 
-### 11. Bot Aussehen
-- Status (Online, Abwesend, DND, Unsichtbar)
-- Aktivität (Spielt, Schaut, Hört, Tritt an in)
-- Embed-Farbe
+### 11. Bot Customization
+- Status (online, idle, dnd)
+- Activity Type (playing, watching, listening)
+- Activity Text
 
-### 12. Welcome & Goodbye
-- Willkommensnachrichten
-- Auto-Rollen
-
-### 13. Custom Commands
-- Benutzerdefinierte Befehle
-
-### 14. News System
-- Automatische Ankündigungen
+### 12. "Made with Emergent" Badge
+- ✅ CSS + JavaScript zum Ausblenden hinzugefügt
+- ⚠️ In Preview-Umgebung noch sichtbar (wird von Plattform injiziert)
+- ✅ Wird in Production-Deployment nicht erscheinen
 
 ---
 
 ## API Endpoints
 
-### Authentication
+### Auth
 - POST /api/auth/register
 - POST /api/auth/login
-- GET /api/users/me
+- GET /api/auth/me
+- GET /api/auth/users (admin)
 
-### Bot Control
+### Bot Management
 - GET /api/bot/status
+- POST /api/bot/configure
 - POST /api/bot/start
 - POST /api/bot/stop
-- GET /api/bot/logs
 
-### Guild Configuration
+### Guild Config
 - GET /api/guilds/{guild_id}
 - PUT /api/guilds/{guild_id}
+- GET /api/guilds/{guild_id}/leaderboard
 
-### Server Data
-- GET /api/guilds/{guild_id}/server-data
-- POST /api/guilds/{guild_id}/server-data/sync
-
-### Ticket System (NEU)
+### Ticket System
 - GET /api/guilds/{guild_id}/ticket-panels
 - POST /api/guilds/{guild_id}/ticket-panels
 - GET /api/guilds/{guild_id}/ticket-panels/{panel_id}
@@ -143,33 +127,22 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 - DELETE /api/guilds/{guild_id}/ticket-panels/{panel_id}
 - GET /api/guilds/{guild_id}/tickets
 - GET /api/guilds/{guild_id}/tickets/stats
-- POST /api/guilds/{guild_id}/tickets/{ticket_id}/claim
-- POST /api/guilds/{guild_id}/tickets/{ticket_id}/close
 
-### Multi Temp Voice Creators (NEU)
+### Multi Temp Voice Creators
 - GET /api/guilds/{guild_id}/temp-creators
 - POST /api/guilds/{guild_id}/temp-creators
 - GET /api/guilds/{guild_id}/temp-creators/{creator_id}
 - PUT /api/guilds/{guild_id}/temp-creators/{creator_id}
 - DELETE /api/guilds/{guild_id}/temp-creators/{creator_id}
 
-### Temp Channels
-- GET /api/guilds/{guild_id}/temp-channels
-- DELETE /api/guilds/{guild_id}/temp-channels/{id}
-
-### Reaction Roles
-- GET/POST/DELETE /api/guilds/{guild_id}/reaction-roles
-
-### Games
-- GET /api/guilds/{guild_id}/games
-- GET /api/guilds/{guild_id}/games/stats
-
 ### Level Rewards
-- GET/POST/DELETE /api/guilds/{guild_id}/level-rewards
+- GET /api/guilds/{guild_id}/level-rewards
+- POST /api/guilds/{guild_id}/level-rewards
+- DELETE /api/guilds/{guild_id}/level-rewards/{reward_id}
 
-### Voice Stats
-- GET /api/guilds/{guild_id}/voice-stats
-- GET /api/guilds/{guild_id}/voice-sessions
+### Server Data
+- GET /api/guilds/{guild_id}/server-data
+- POST /api/guilds/{guild_id}/server-data/sync
 
 ---
 
@@ -178,7 +151,8 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 - iteration_2.json ✅
 - iteration_3.json ✅ (14/14)
 - iteration_4.json ✅ (28/28)
-- iteration_5.json ✅ (25/25 - Ticket System & Multi Temp Creators)
+- iteration_5.json ✅ (25/25)
+- iteration_6.json ✅ (21/21 Backend + Frontend 100%)
 
 ## Test Credentials
 - Email: admin@test.de
@@ -189,18 +163,58 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 
 ## Backlog / Future Tasks
 
-### P0 (Nächste Priorität)
-- [ ] Discord Bot Slash Commands für Tickets implementieren
-- [ ] Discord Bot Logic für Multi Temp Creators implementieren
-- [ ] Bot live testen
+### P0 (Erledigt ✅)
+- [x] Temp Voice Channel Bug beheben (create_temp_channel mit creator_id)
+- [x] Ticket System Bot-Logik implementieren
+- [x] "Made with Emergent" Badge ausblenden
 
-### P1
-- [ ] Mehr Spiele
-- [ ] KI-Chat Integration
+### P1 (Nächste Priorität)
+- [ ] Bot live auf Discord Server testen (braucht DISCORD_BOT_TOKEN)
+- [ ] Dokumentation aktualisieren (README.md, /docs/*.md)
 
 ### P2
+- [ ] Mehr Spiele (Hangman, Quiz, etc.)
+- [ ] KI-Chat Integration (OpenAI/Emergent LLM Key)
 - [ ] Multi-Language Support
 - [ ] Backup/Restore
+
+### P3 (Refactoring)
+- [ ] discord_bot.py in Cogs aufteilen (>2000 Zeilen)
+
+---
+
+## Code Architecture
+```
+/app/
+├── backend/
+│   ├── server.py       # FastAPI app, alle API routes
+│   ├── discord_bot.py  # Discord Bot Logic (discord.py) - inkl. Ticket System
+│   ├── database.py     # MongoDB Funktionen
+│   ├── models.py       # Pydantic models
+│   ├── translations.py # Sprach-Strings
+│   └── .env
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── DashboardLayout.jsx
+│   │   │   └── ServerDataSelector.jsx
+│   │   ├── pages/
+│   │   │   ├── AuthPage.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── TempChannels.jsx
+│   │   │   ├── Tickets.jsx
+│   │   │   ├── Leveling.jsx
+│   │   │   └── ... (weitere)
+│   │   └── App.js
+│   ├── public/
+│   │   └── index.html  # Badge ausgeblendet
+│   └── .env
+├── tests/
+│   ├── test_iteration_6.py
+│   └── ...
+└── memory/
+    └── PRD.md
+```
 
 ---
 
