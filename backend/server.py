@@ -347,14 +347,25 @@ async def start_bot(background_tasks: BackgroundTasks):
     if not os.environ.get('DISCORD_BOT_TOKEN'):
         raise HTTPException(status_code=400, detail="Discord Token nicht konfiguriert")
     
-    # Start bot in background
+    # Create logs directory
+    log_dir = ROOT_DIR / 'logs'
+    log_dir.mkdir(exist_ok=True)
+    
+    # Open log files
+    bot_log = open(log_dir / 'bot.log', 'a')
+    bot_err = open(log_dir / 'bot_error.log', 'a')
+    
+    # Start bot in background with logs
     bot_process = subprocess.Popen(
-        [sys.executable, str(ROOT_DIR / 'discord_bot.py')],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        [sys.executable, '-u', str(ROOT_DIR / 'discord_bot.py')],
+        stdout=bot_log,
+        stderr=bot_err,
+        cwd=str(ROOT_DIR)
     )
     
-    return {"success": True, "message": "Bot wird gestartet..."}
+    logger.info(f"Bot process started with PID: {bot_process.pid}")
+    
+    return {"success": True, "message": f"Bot wird gestartet... (PID: {bot_process.pid})"}
 
 @api_router.post("/bot/stop")
 async def stop_bot():
