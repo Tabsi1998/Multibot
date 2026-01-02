@@ -680,6 +680,15 @@ async def create_reaction_role_api(guild_id: str, rr: ReactionRoleCreate):
     
     return {"created": len(results), "reaction_roles": results}
 
+@api_router.put("/guilds/{guild_id}/reaction-roles/{rr_id}")
+async def update_reaction_role(guild_id: str, rr_id: str, data: dict):
+    """Update a reaction role"""
+    from database import update_reaction_role
+    updated = await update_reaction_role(rr_id, data)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Reaction role not found")
+    return {"updated": True, **updated}
+
 @api_router.delete("/guilds/{guild_id}/reaction-roles/{rr_id}")
 async def remove_reaction_role(guild_id: str, rr_id: str):
     """Delete a reaction role"""
