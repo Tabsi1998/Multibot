@@ -204,3 +204,9 @@ input:focus, textarea:focus, select:focus {
     text-transform: uppercase;
     color: #80848E;
 }
+
+
+/* Hide Emergent Badge */
+#emergent-badge {
+    display: none !important;
+}
