@@ -46,14 +46,6 @@ export default function Games() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  useEffect(() => {
-    if (guildId) {
-      fetchConfig();
-      fetchActiveGames();
-      fetchStats();
-    }
-  }, [guildId]);
-
   const fetchConfig = async () => {
     try {
       const res = await axios.get(`${API}/guilds/${guildId}`, {
@@ -86,6 +78,15 @@ export default function Games() {
       console.error(e);
     }
   };
+
+  useEffect(() => {
+    if (guildId) {
+      fetchConfig();
+      fetchActiveGames();
+      fetchStats();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId]);
 
   const saveConfig = async () => {
     setLoading(true);
