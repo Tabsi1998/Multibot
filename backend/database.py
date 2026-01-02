@@ -63,7 +63,11 @@ async def get_guild_config(guild_id: str) -> dict:
     config = await guilds_collection.find_one({"guild_id": guild_id}, {"_id": 0})
     if not config:
         config = {**DEFAULT_GUILD_CONFIG, "guild_id": guild_id}
-        await guilds_collection.insert_one(config)
+        # Remove _id before returning
+        insert_doc = dict(config)
+        await guilds_collection.insert_one(insert_doc)
+        # Return fresh copy without _id
+        config = {k: v for k, v in config.items() if k != "_id"}
     else:
         # Merge with defaults for any missing keys
         for key, value in DEFAULT_GUILD_CONFIG.items():
