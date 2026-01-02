@@ -59,6 +59,20 @@ export default function Dashboard() {
     }
   };
 
+  const testBotConfig = async () => {
+    try {
+      const res = await axios.post(`${API}/bot/test`);
+      setTestResult(res.data);
+      if (res.data.success) {
+        toast.success("Bot-Konfiguration OK!");
+      } else {
+        toast.error("Probleme gefunden - siehe Details unten");
+      }
+    } catch (e) {
+      toast.error("Test fehlgeschlagen");
+    }
+  };
+
   const fetchStats = async (id) => {
     if (!id) return;
     try {
