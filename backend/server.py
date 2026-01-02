@@ -177,6 +177,119 @@ class PermissionUpdate(BaseModel):
     command: str
     role_ids: List[str]
 
+# ==================== AUTH ENDPOINTS ====================
+
+@api_router.post("/auth/register")
+async def register(user_data: UserRegister):
+    """Register a new user. First user becomes admin."""
+    # Check if email already exists
+    existing = await db.dashboard_users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="E-Mail bereits registriert")
+    
+    # Check if username already exists
+    existing_username = await db.dashboard_users.find_one({"username": user_data.username})
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Benutzername bereits vergeben")
+    
+    # Check if this is the first user (will be admin)
+    user_count = await db.dashboard_users.count_documents({})
+    is_admin = user_count == 0
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    user = {
+        "id": user_id,
+        "username": user_data.username,
+        "email": user_data.email,
+        "password_hash": hash_password(user_data.password),
+        "is_admin": is_admin,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.dashboard_users.insert_one(user)
+    
+    # Create JWT token
+    token = create_jwt_token(user_id, user_data.username, is_admin)
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user_id,
+            "username": user_data.username,
+            "email": user_data.email,
+            "is_admin": is_admin
+        },
+        "message": "Registrierung erfolgreich!" + (" Du bist der erste Benutzer und damit Administrator." if is_admin else "")
+    }
+
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin):
+    """Login with email and password"""
+    user = await db.dashboard_users.find_one({"email": credentials.email})
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
+    
+    if user["password_hash"] != hash_password(credentials.password):
+        raise HTTPException(status_code=401, detail="Ungültige Anmeldedaten")
+    
+    # Create JWT token
+    token = create_jwt_token(user["id"], user["username"], user["is_admin"])
+    
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "username": user["username"],
+            "email": user["email"],
+            "is_admin": user["is_admin"]
+        }
+    }
+
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(require_auth)):
+    """Get current user info"""
+    user = await db.dashboard_users.find_one({"id": current_user["user_id"]}, {"_id": 0, "password_hash": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    return user
+
+@api_router.get("/auth/users")
+async def list_users(current_user: dict = Depends(require_admin)):
+    """List all users (admin only)"""
+    users = await db.dashboard_users.find({}, {"_id": 0, "password_hash": 0}).to_list(100)
+    return {"users": users}
+
+@api_router.put("/auth/users/{user_id}/admin")
+async def toggle_admin(user_id: str, is_admin: bool, current_user: dict = Depends(require_admin)):
+    """Toggle admin status for a user (admin only)"""
+    if user_id == current_user["user_id"]:
+        raise HTTPException(status_code=400, detail="Du kannst deinen eigenen Admin-Status nicht ändern")
+    
+    result = await db.dashboard_users.update_one(
+        {"id": user_id},
+        {"$set": {"is_admin": is_admin}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    return {"success": True, "message": f"Admin-Status auf {is_admin} gesetzt"}
+
+@api_router.delete("/auth/users/{user_id}")
+async def delete_user(user_id: str, current_user: dict = Depends(require_admin)):
+    """Delete a user (admin only)"""
+    if user_id == current_user["user_id"]:
+        raise HTTPException(status_code=400, detail="Du kannst dich nicht selbst löschen")
+    
+    result = await db.dashboard_users.delete_one({"id": user_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Benutzer nicht gefunden")
+    
+    return {"success": True, "message": "Benutzer gelöscht"}
+
 # ==================== BOT MANAGEMENT ====================
 
 @api_router.get("/")
@@ -197,8 +310,8 @@ async def get_bot_status():
     }
 
 @api_router.post("/bot/configure")
-async def configure_bot(config: BotConfig):
-    """Configure bot tokens"""
+async def configure_bot(config: BotConfig, current_user: dict = Depends(require_admin)):
+    """Configure bot tokens (admin only)"""
     env_path = ROOT_DIR / '.env'
     env_content = env_path.read_text() if env_path.exists() else ""
     
