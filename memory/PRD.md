@@ -1,203 +1,228 @@
-# Discord MultiBot Command Center - PRD
+# Discord MultiBot - Product Requirements Document (PRD)
 
-## Projektübersicht / Project Overview
+## Original Problem Statement
+Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwickeln, der mehrere spezialisierte Bots wie MEE6 und Dyno ersetzen kann.
 
-**Name:** MultiBot Command Center  
-**Version:** 1.0.0  
-**Datum:** 2026-01-02
-
----
-
-## Ursprüngliche Anforderung / Original Problem Statement
-
-Entwicklung eines ultimativen Discord-Bots mit Web-Dashboard, der alle wichtigen Bot-Funktionen vereint:
-- Moderation (Warn/Kick/Ban/Mute)
-- Permission Management
-- Temp-Channel Management  
-- Leveling/XP-System
-- Willkommensnachrichten & Auto-Rollen
-- Custom Commands
-- ChatGPT-Integration
-- Automatische News
-
-Konfigurierbar über Web-Dashboard UND Slash-Commands.
-Mehrsprachig mit Deutsch als bevorzugte Sprache.
+## User Persona
+- Discord Server Administrator
+- Sprache: Deutsch
+- Technische Kenntnisse: Fortgeschritten (kann Bot selbst hosten)
+- Ziel: Einen einzigen Bot für alle Server-Management-Funktionen
 
 ---
 
-## Benutzer-Personas / User Personas
+## Core Features
 
-### 1. Server-Administrator
-- **Ziel:** Alle Bot-Funktionen zentral verwalten
-- **Bedarf:** Übersichtliches Dashboard, schnelle Konfiguration
-- **Technisch:** Versteht Discord-IDs, kann Entwicklermodus nutzen
+### ✅ Implemented (MVP Complete)
 
-### 2. Moderator
-- **Ziel:** Schneller Zugriff auf Moderations-Tools
-- **Bedarf:** Slash-Commands, Warn-System, Mod-Logs
-- **Technisch:** Grundlegende Discord-Kenntnisse
+#### 1. Authentication System
+- JWT-basierte Authentifizierung
+- Registrierung (erster Benutzer = automatisch Admin)
+- Login/Logout
+- Benutzerverwaltung im Dashboard
 
-### 3. Normaler Benutzer
-- **Ziel:** XP sammeln, Rang anzeigen, Custom Commands nutzen
-- **Bedarf:** Einfache Slash-Commands
-- **Technisch:** Keine speziellen Kenntnisse erforderlich
+#### 2. Web Dashboard
+- React Frontend mit Discord-ähnlichem Design
+- Sidebar-Navigation
+- Server-Konfiguration
+- Bot-Status und Steuerung
+
+#### 3. Moderation
+- Kick, Ban, Mute, Warn Befehle
+- Warn-System mit Speicherung
+- Log-Kanal Konfiguration
+
+#### 4. Leveling / XP System
+- XP für Nachrichten
+- Level-Ups mit Benachrichtigungen
+- Leaderboard
+- XP-Rate konfigurierbar
+
+#### 5. Welcome & Goodbye
+- Willkommensnachrichten
+- Abschiedsnachrichten
+- Auto-Rollen für neue Mitglieder
+- Kanal-Konfiguration
+
+#### 6. Custom Commands
+- Benutzerdefinierte Befehle erstellen
+- Antworten mit Variablen
+- Embed-Support
+
+#### 7. News System
+- Automatische Ankündigungen
+- Feed-Konfiguration
+- Kanal-Auswahl
+
+#### 8. Bot Settings
+- Token-Konfiguration
+- Prefix-Einstellung
+- Bot-Start/Stop Steuerung
+- Bot-Logs Anzeige
 
 ---
 
-## Kernfunktionen / Core Requirements
+## ✅ Neu Implementiert (02.01.2026)
 
-### Funktional
+### 9. Temp Voice Channels (tempvoice.xyz Style)
+**Status: VOLLSTÄNDIG IMPLEMENTIERT**
 
-| ID | Feature | Status | Priorität |
-|----|---------|--------|-----------|
-| F1 | Web-Dashboard | ✅ Fertig | P0 |
-| F2 | Discord Bot | ✅ Fertig | P0 |
-| F3 | Moderation System | ✅ Fertig | P0 |
-| F4 | Permission Management | ✅ Fertig | P0 |
-| F5 | Temp Channels | ✅ Fertig | P0 |
-| F6 | Leveling/XP | ✅ Fertig | P0 |
-| F7 | Welcome System | ✅ Fertig | P0 |
-| F8 | Custom Commands | ✅ Fertig | P0 |
-| F9 | AI Chat | ✅ Fertig | P0 |
-| F10 | News System | ✅ Fertig | P0 |
-| F11 | Multi-Language | ✅ Fertig | P0 |
+Features:
+- ✅ Aktivierung/Deaktivierung
+- ✅ Creator Channel ID konfigurieren
+- ✅ Kategorie für neue Kanäle
+- ✅ Standard Kanal-Name mit Variablen ({user})
+- ✅ Standard Benutzerlimit (Slider 0-99)
+- ✅ Standard Bitrate (8-384 kbps)
+- ✅ Benutzer-Berechtigungen:
+  - Umbenennen erlauben
+  - Limit setzen erlauben
+  - Sperren erlauben
+  - Verstecken erlauben
+  - Kicken erlauben
+  - Permit erlauben
+  - Bitrate ändern erlauben
+- ✅ Aktive Temp-Channels Übersicht
+- ✅ Discord Befehle: /vc rename, /vc limit, /vc lock, /vc unlock, /vc kick, /vc permit, /vc claim
 
-### Nicht-Funktional
+### 10. Reaction Roles
+**Status: VOLLSTÄNDIG IMPLEMENTIERT**
 
-| Anforderung | Erfüllt |
-|-------------|---------|
-| Responsive Design | ✅ |
-| Dark Theme | ✅ |
-| Deutsche UI | ✅ |
-| API Dokumentation | ✅ |
+Features:
+- ✅ Button Reaction Roles (empfohlen, modern)
+- ✅ Emoji Reaction Roles (klassisch)
+- ✅ Erstellen über Web-Dialog:
+  - Typ-Auswahl (Button/Emoji)
+  - Kanal ID
+  - Titel & Beschreibung
+  - Embed-Farbe (Colorpicker)
+  - Rollen mit Emoji, Rollen-ID, Label
+  - Quick-Emoji Auswahl
+  - Bis zu 10 Rollen pro Nachricht
+- ✅ Liste aktiver Reaction Roles
+- ✅ Löschen über Web
+- ✅ Discord Befehle: /reactionrole create, /reactionrole reaction, /reactionrole list
+
+### 11. Discord Spiele
+**Status: VOLLSTÄNDIG IMPLEMENTIERT**
+
+Spiele:
+- ✅ Tic Tac Toe (2 Spieler) - /game tictactoe @Gegner
+- ✅ Stadt Land Fluss (2-4 Spieler) - /game stadtlandfluss @Spieler2 [@Spieler3] [@Spieler4]
+- ✅ Münzwurf (1 Spieler) - /game coinflip
+- ✅ Würfeln (1 Spieler) - /game dice [Seiten]
+- ✅ Schere Stein Papier (1 Spieler) - /game rps
+- ✅ 8-Ball (1 Spieler) - /game 8ball [Frage]
+
+Dashboard Features:
+- ✅ Spiele aktivieren/deaktivieren
+- ✅ Spiele-Kanal Beschränkung (optional)
+- ✅ Statistiken (Gespielte Spiele, Top Spieler)
+- ✅ Aktive Spiele Übersicht
+- ✅ Alle Befehle mit Beschreibung
 
 ---
 
-## Architektur / Architecture
+## API Endpoints
 
+### Authentication
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/users/me
+
+### Bot
+- GET /api/bot/status
+- POST /api/bot/start
+- POST /api/bot/stop
+- GET /api/bot/logs
+- POST /api/bot/test
+
+### Guild Configuration
+- GET /api/guilds/{guild_id}
+- PUT /api/guilds/{guild_id}
+- GET /api/guilds/{guild_id}/stats
+
+### Temp Channels
+- GET /api/guilds/{guild_id}/temp-channels
+- DELETE /api/guilds/{guild_id}/temp-channels/{channel_id}
+
+### Reaction Roles
+- GET /api/guilds/{guild_id}/reaction-roles
+- POST /api/guilds/{guild_id}/reaction-roles
+- DELETE /api/guilds/{guild_id}/reaction-roles/{id}
+
+### Games
+- GET /api/guilds/{guild_id}/games
+- GET /api/guilds/{guild_id}/games/stats
+
+---
+
+## Tech Stack
+- **Backend:** FastAPI (Python)
+- **Frontend:** React mit Shadcn/UI
+- **Database:** MongoDB
+- **Bot:** discord.py
+- **Auth:** JWT
+- **Deployment:** Self-hosted via install.sh
+
+---
+
+## Backlog / Future Tasks
+
+### P0 (Nächste Priorität)
+- [ ] Discord Slash-Commands für Temp Channels vollständig implementieren
+- [ ] Discord Slash-Commands für Reaction Roles vollständig implementieren
+- [ ] Discord Slash-Commands für Spiele vollständig implementieren
+- [ ] Bot tatsächlich starten (erfordert gültigen Discord Token)
+
+### P1
+- [ ] KI-Chat Integration (wenn API Key vorhanden)
+- [ ] Mehr Spiele hinzufügen (Hangman, Quiz, etc.)
+- [ ] Permissions Management erweitern
+
+### P2
+- [ ] Multi-Language Support für Frontend
+- [ ] Backup/Restore für Konfiguration
+- [ ] Audit-Log für Admin-Aktionen
+
+---
+
+## Test Reports
+- /app/test_reports/iteration_1.json
+- /app/test_reports/iteration_2.json
+- /app/test_reports/iteration_3.json ✅ (14/14 Tests bestanden)
+
+## Test Credentials
+- Email: admin@test.de
+- Password: admin123
+- Guild ID: 807292920734547969
+
+---
+
+## Files Structure
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Web Dashboard                          │
-│                    (React + Tailwind)                       │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ REST API
-┌─────────────────────────┴───────────────────────────────────┐
-│                      Backend API                            │
-│                       (FastAPI)                             │
-├─────────────────────────┬───────────────────────────────────┤
-│                         │                                   │
-│    ┌────────────────────┴────────────────────┐              │
-│    │           Discord Bot                    │              │
-│    │          (discord.py)                    │              │
-│    └────────────────────┬────────────────────┘              │
-│                         │                                   │
-└─────────────────────────┼───────────────────────────────────┘
-                          │
-┌─────────────────────────┴───────────────────────────────────┐
-│                       MongoDB                               │
-│        (Guilds, Users, Warnings, Commands, News)            │
-└─────────────────────────────────────────────────────────────┘
+/app/
+├── backend/
+│   ├── server.py       # FastAPI + alle API Endpunkte
+│   ├── discord_bot.py  # Discord Bot Logik
+│   ├── database.py     # MongoDB Funktionen
+│   └── translations.py # Deutsche Übersetzungen
+├── frontend/
+│   └── src/
+│       ├── pages/
+│       │   ├── Dashboard.jsx
+│       │   ├── TempChannels.jsx ✅ NEU
+│       │   ├── ReactionRoles.jsx ✅ NEU
+│       │   ├── Games.jsx ✅ NEU
+│       │   └── ...
+│       └── components/
+│           └── DashboardLayout.jsx
+├── docs/
+├── install.sh
+└── memory/
+    └── PRD.md
 ```
 
-### Tech Stack
-
-| Komponente | Technologie |
-|------------|-------------|
-| Frontend | React 19, Tailwind CSS, Shadcn/UI |
-| Backend | FastAPI, Motor (async MongoDB) |
-| Datenbank | MongoDB |
-| Bot | discord.py |
-| AI | Emergent LLM Integration (GPT-4o) |
-
 ---
 
-## Implementierte Features / What's Been Implemented
-
-### Backend (2026-01-02)
-
-- [x] REST API für alle Features
-- [x] MongoDB Collections (guilds, users, warnings, commands, news)
-- [x] Bot-Prozess-Management (Start/Stop)
-- [x] Emergent LLM Integration
-- [x] Discord.py Bot mit Slash-Commands
-
-### Frontend (2026-01-02)
-
-- [x] Dashboard mit Server-Auswahl und Statistiken
-- [x] Moderation: Verwarnungen, Mod-Logs
-- [x] Permissions: Admin/Mod Rollen
-- [x] Temp Channels: Konfiguration
-- [x] Leveling: XP-Einstellungen, Level-Rollen, Rangliste
-- [x] Welcome: Nachrichten, Auto-Rollen
-- [x] Custom Commands: CRUD
-- [x] AI Settings: Kanal und Prompt
-- [x] News: Erstellen und Planen
-- [x] Settings: Token, Sprache, Prefix
-
-### Discord Bot (2026-01-02)
-
-- [x] Moderation: /warn, /kick, /ban, /mute, /unmute
-- [x] Info: /serverinfo, /userinfo, /rank, /leaderboard
-- [x] Auto-Features: Welcome, Goodbye, Auto-Roles
-- [x] XP-System: Nachrichten-XP, Level-Ups, Level-Rollen
-- [x] Temp Channels: Auto-Erstellung/Löschung
-- [x] AI Chat: GPT-Antworten
-- [x] Geplante News
-
----
-
-## Priorisierter Backlog / Prioritized Backlog
-
-### P0 - MVP (✅ Fertig)
-
-Alle Kern-Features implementiert.
-
-### P1 - Nächste Phase
-
-| Feature | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| Reaction Roles | Rollen per Reaktion zuweisen | Medium |
-| Ticket System | Support-Tickets erstellen | High |
-| Auto-Moderation | Wortfilter, Spam-Erkennung | Medium |
-| Musik | Musik-Wiedergabe | High |
-
-### P2 - Zukünftig
-
-| Feature | Beschreibung | Aufwand |
-|---------|--------------|---------|
-| Analytics Dashboard | Detaillierte Statistiken | High |
-| Backup/Restore | Konfiguration sichern | Medium |
-| Custom Embeds | Embed-Builder | Medium |
-| Giveaway System | Verlosungen | Medium |
-| Economy System | Virtuelles Geld | High |
-
----
-
-## Dokumentation / Documentation
-
-| Dokument | Pfad | Inhalt |
-|----------|------|--------|
-| README | `/app/README.md` | Hauptdokumentation (DE/EN) |
-| API | `/app/docs/API.md` | REST API Referenz |
-| Commands | `/app/docs/COMMANDS.md` | Bot Commands Referenz |
-| Config | `/app/docs/CONFIGURATION.md` | Konfigurationsoptionen |
-| Quickstart | `/app/docs/QUICKSTART.md` | Schnellstart-Anleitung |
-
----
-
-## Nächste Schritte / Next Action Items
-
-1. **Discord Bot Token hinzufügen** - Live-Funktionalität testen
-2. **Reaction Roles implementieren** - Beliebtes Feature
-3. **Ticket-System hinzufügen** - Support-Funktionalität
-4. **Auto-Moderation** - Spam/Filter-Erkennung
-
----
-
-## Changelog
-
-### v1.0.0 (2026-01-02)
-- Initial Release
-- Alle MVP-Features implementiert
-- Multi-Language Support (DE/EN)
-- Dokumentation erstellt
+*Zuletzt aktualisiert: 02.01.2026*
