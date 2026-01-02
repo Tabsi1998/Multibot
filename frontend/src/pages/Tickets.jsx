@@ -629,6 +629,14 @@ export default function Tickets() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
+                        onClick={() => openEditPanel(panel)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-[#5865F2] hover:text-[#5865F2] hover:bg-[#5865F2]/10"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
                         onClick={() => deletePanel(panel.id)}
                         variant="ghost"
                         size="icon"
