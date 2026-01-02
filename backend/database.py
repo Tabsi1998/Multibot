@@ -207,8 +207,10 @@ async def add_news(guild_id: str, title: str, content: str, scheduled_for: str =
         "created_at": datetime.now(timezone.utc).isoformat(),
         "posted": False
     }
-    await news_collection.insert_one(news)
-    return news
+    insert_doc = dict(news)
+    await news_collection.insert_one(insert_doc)
+    # Return without _id
+    return {k: v for k, v in news.items() if k != "_id"}
 
 async def get_news(guild_id: str) -> list:
     """Get all news for a guild"""
