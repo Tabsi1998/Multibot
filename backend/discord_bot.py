@@ -700,6 +700,166 @@ async def on_raw_reaction_remove(payload):
             except:
                 pass
 
+# ==================== GENERAL COMMANDS ====================
+
+@bot.tree.command(name="help", description="Zeigt alle verfügbaren Befehle")
+async def help_command(interaction: discord.Interaction):
+    config = await get_guild_config(str(interaction.guild.id))
+    embed_color = int(config.get('bot_embed_color', '#5865F2').replace('#', ''), 16)
+    
+    embed = discord.Embed(
+        title="📚 MultiBot Befehle",
+        description="Hier findest du alle verfügbaren Befehle:",
+        color=embed_color
+    )
+    
+    # Moderation
+    embed.add_field(
+        name="🛡️ Moderation",
+        value="`/warn` - Benutzer verwarnen\n`/kick` - Benutzer kicken\n`/ban` - Benutzer bannen\n`/mute` - Benutzer stummschalten\n`/warnings` - Verwarnungen anzeigen\n`/clearwarns` - Verwarnungen löschen",
+        inline=False
+    )
+    
+    # Temp Channels
+    embed.add_field(
+        name="🎤 Temp Voice Channels",
+        value="`/vc rename` - Kanal umbenennen\n`/vc limit` - Userlimit setzen\n`/vc lock` - Kanal sperren\n`/vc unlock` - Kanal entsperren\n`/vc kick` - Benutzer kicken\n`/vc permit` - Benutzer erlauben\n`/vc claim` - Kanal übernehmen",
+        inline=False
+    )
+    
+    # Leveling
+    embed.add_field(
+        name="🏆 Leveling",
+        value="`/rank` - Zeigt deinen Rang\n`/leaderboard` - Top 10 Rangliste",
+        inline=False
+    )
+    
+    # Games
+    embed.add_field(
+        name="🎮 Spiele",
+        value="`/game tictactoe` - TicTacToe spielen\n`/game stadtlandfluss` - Stadt Land Fluss\n`/game coinflip` - Münzwurf\n`/game dice` - Würfeln\n`/game rps` - Schere Stein Papier\n`/game 8ball` - Magische 8-Ball",
+        inline=False
+    )
+    
+    # Info
+    embed.add_field(
+        name="ℹ️ Informationen",
+        value="`/help` - Diese Hilfe\n`/botinfo` - Bot Informationen\n`/serverinfo` - Server Statistiken\n`/userinfo` - Benutzer Info",
+        inline=False
+    )
+    
+    embed.set_footer(text=f"MultiBot v1.0 | Prefix: {config.get('prefix', '!')}")
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="botinfo", description="Zeigt Informationen über den Bot")
+async def botinfo(interaction: discord.Interaction):
+    config = await get_guild_config(str(interaction.guild.id))
+    embed_color = int(config.get('bot_embed_color', '#5865F2').replace('#', ''), 16)
+    
+    # Calculate uptime (approximate)
+    import time
+    
+    embed = discord.Embed(
+        title="🤖 Bot Informationen",
+        color=embed_color
+    )
+    
+    embed.set_thumbnail(url=bot.user.avatar.url if bot.user.avatar else bot.user.default_avatar.url)
+    
+    embed.add_field(name="Bot Name", value=bot.user.name, inline=True)
+    embed.add_field(name="Bot ID", value=bot.user.id, inline=True)
+    embed.add_field(name="Server", value=len(bot.guilds), inline=True)
+    embed.add_field(name="Benutzer", value=sum(g.member_count for g in bot.guilds), inline=True)
+    embed.add_field(name="Latenz", value=f"{round(bot.latency * 1000)}ms", inline=True)
+    embed.add_field(name="Python", value=f"{discord.__version__}", inline=True)
+    
+    embed.add_field(
+        name="🔗 Links",
+        value="[Dashboard](https://alleskoennerbot.preview.emergentagent.com) • [Support](#)",
+        inline=False
+    )
+    
+    embed.set_footer(text="MultiBot - Der ultimative All-in-One Discord Bot")
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="serverinfo", description="Zeigt Server Statistiken")
+async def serverinfo(interaction: discord.Interaction):
+    guild = interaction.guild
+    config = await get_guild_config(str(guild.id))
+    embed_color = int(config.get('bot_embed_color', '#5865F2').replace('#', ''), 16)
+    
+    # Count channels
+    text_channels = len(guild.text_channels)
+    voice_channels = len(guild.voice_channels)
+    categories = len(guild.categories)
+    
+    # Count members
+    total_members = guild.member_count
+    bots = len([m for m in guild.members if m.bot])
+    humans = total_members - bots
+    
+    # Online status
+    online = len([m for m in guild.members if m.status != discord.Status.offline])
+    
+    embed = discord.Embed(
+        title=f"📊 {guild.name}",
+        color=embed_color
+    )
+    
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    
+    embed.add_field(name="🆔 Server ID", value=guild.id, inline=True)
+    embed.add_field(name="👑 Owner", value=guild.owner.mention if guild.owner else "Unbekannt", inline=True)
+    embed.add_field(name="📅 Erstellt", value=guild.created_at.strftime("%d.%m.%Y"), inline=True)
+    
+    embed.add_field(name="👥 Mitglieder", value=f"Gesamt: {total_members}\nMenschen: {humans}\nBots: {bots}", inline=True)
+    embed.add_field(name="🟢 Online", value=f"{online} Mitglieder", inline=True)
+    embed.add_field(name="🎭 Rollen", value=len(guild.roles), inline=True)
+    
+    embed.add_field(name="💬 Kanäle", value=f"Text: {text_channels}\nVoice: {voice_channels}\nKategorien: {categories}", inline=True)
+    embed.add_field(name="😀 Emojis", value=f"{len(guild.emojis)}/{guild.emoji_limit}", inline=True)
+    embed.add_field(name="🚀 Boost Level", value=f"Level {guild.premium_tier}", inline=True)
+    
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="userinfo", description="Zeigt Informationen über einen Benutzer")
+@app_commands.describe(user="Der Benutzer (optional)")
+async def userinfo(interaction: discord.Interaction, user: discord.Member = None):
+    user = user or interaction.user
+    config = await get_guild_config(str(interaction.guild.id))
+    embed_color = int(config.get('bot_embed_color', '#5865F2').replace('#', ''), 16)
+    
+    # Get XP data
+    user_data = await get_user_data(str(interaction.guild.id), str(user.id))
+    
+    embed = discord.Embed(
+        title=f"👤 {user.display_name}",
+        color=user.color if user.color != discord.Color.default() else embed_color
+    )
+    
+    embed.set_thumbnail(url=user.avatar.url if user.avatar else user.default_avatar.url)
+    
+    embed.add_field(name="🆔 User ID", value=user.id, inline=True)
+    embed.add_field(name="📛 Username", value=str(user), inline=True)
+    embed.add_field(name="🤖 Bot", value="Ja" if user.bot else "Nein", inline=True)
+    
+    embed.add_field(name="📅 Discord beigetreten", value=user.created_at.strftime("%d.%m.%Y"), inline=True)
+    embed.add_field(name="📥 Server beigetreten", value=user.joined_at.strftime("%d.%m.%Y") if user.joined_at else "?", inline=True)
+    
+    # Leveling info
+    embed.add_field(name="⭐ Level", value=user_data.get('level', 0), inline=True)
+    embed.add_field(name="✨ XP", value=user_data.get('xp', 0), inline=True)
+    embed.add_field(name="💬 Nachrichten", value=user_data.get('messages', 0), inline=True)
+    embed.add_field(name="🎤 Voice (Min)", value=user_data.get('voice_minutes', 0), inline=True)
+    
+    # Top roles (max 5)
+    roles = [r.mention for r in user.roles if r.name != "@everyone"][:5]
+    if roles:
+        embed.add_field(name=f"🎭 Rollen ({len(user.roles)-1})", value=" ".join(roles), inline=False)
+    
+    await interaction.response.send_message(embed=embed)
+
 # ==================== MODERATION COMMANDS ====================
 
 @bot.tree.command(name="warn", description="Verwarnt einen Benutzer")
