@@ -14,9 +14,19 @@ import {
   Menu,
   X,
   Circle,
+  LogOut,
+  Users,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import axios from "axios";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -34,7 +44,11 @@ const navItems = [
   { path: "/settings", icon: Settings, label: "Einstellungen" },
 ];
 
-export default function DashboardLayout() {
+const adminNavItems = [
+  { path: "/users", icon: Users, label: "Benutzer", adminOnly: true },
+];
+
+export default function DashboardLayout({ user, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [botStatus, setBotStatus] = useState({ running: false, token_configured: false });
   const location = useLocation();
@@ -53,6 +67,10 @@ export default function DashboardLayout() {
       console.error("Failed to fetch bot status", e);
     }
   };
+
+  const allNavItems = user?.is_admin 
+    ? [...navItems, ...adminNavItems] 
+    : navItems;
 
   return (
     <div className="flex h-screen overflow-hidden noise-bg">
@@ -107,7 +125,7 @@ export default function DashboardLayout() {
           {/* Navigation */}
           <ScrollArea className="flex-1 py-4">
             <nav className="px-3 space-y-1">
-              {navItems.map((item) => {
+              {allNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive =
                   location.pathname === item.path ||
@@ -123,21 +141,66 @@ export default function DashboardLayout() {
                       isActive
                         ? "bg-[#404249] text-white"
                         : "text-gray-400 hover:bg-[#3F4147] hover:text-gray-100"
-                    }`}
+                    } ${item.adminOnly ? "border-l-2 border-[#EB459E]" : ""}`}
                   >
                     <Icon className="h-5 w-5" />
                     {item.label}
+                    {item.adminOnly && (
+                      <Crown className="h-3 w-3 text-[#EB459E] ml-auto" />
+                    )}
                   </NavLink>
                 );
               })}
             </nav>
           </ScrollArea>
 
-          {/* Footer */}
+          {/* User Section */}
           <div className="p-4 border-t border-[#1E1F22]">
-            <p className="text-xs text-gray-500 text-center">
-              © 2025 Discord MultiBot
-            </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-[#3F4147] transition-colors"
+                  data-testid="user-menu-trigger"
+                >
+                  <div className="w-8 h-8 rounded-full bg-[#5865F2] flex items-center justify-center text-white font-bold text-sm">
+                    {user?.username?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="text-sm font-medium text-white truncate">
+                      {user?.username || "Benutzer"}
+                    </p>
+                    <p className="text-xs text-gray-400 flex items-center gap-1">
+                      {user?.is_admin ? (
+                        <>
+                          <Crown className="h-3 w-3 text-[#EB459E]" />
+                          Admin
+                        </>
+                      ) : (
+                        "Benutzer"
+                      )}
+                    </p>
+                  </div>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-56 bg-[#1E1F22] border-[#404249]"
+              >
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium text-white">{user?.username}</p>
+                  <p className="text-xs text-gray-400">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator className="bg-[#404249]" />
+                <DropdownMenuItem
+                  onClick={onLogout}
+                  className="text-[#DA373C] hover:text-white hover:bg-[#DA373C] cursor-pointer"
+                  data-testid="logout-btn"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Abmelden
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </aside>
@@ -148,7 +211,7 @@ export default function DashboardLayout() {
         <header className="sticky top-0 z-30 glass border-b border-[#1E1F22] px-6 py-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-white font-[Outfit] md:ml-0 ml-12">
-              {navItems.find(
+              {allNavItems.find(
                 (item) =>
                   item.path === location.pathname ||
                   (item.path !== "/" && location.pathname.startsWith(item.path))
