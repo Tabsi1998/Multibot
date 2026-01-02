@@ -474,6 +474,14 @@ export default function TempChannels() {
                         onCheckedChange={(v) => updateCreator(creator.id, { enabled: v })}
                       />
                       <Button
+                        onClick={() => openEditCreator(creator)}
+                        variant="ghost"
+                        size="icon"
+                        className="text-[#5865F2] hover:text-[#5865F2] hover:bg-[#5865F2]/10"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
                         onClick={() => deleteCreator(creator.id)}
                         variant="ghost"
                         size="icon"
@@ -497,6 +505,149 @@ export default function TempChannels() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Creator Dialog */}
+      <Dialog open={!!editCreator} onOpenChange={(open) => !open && setEditCreator(null)}>
+        <DialogContent className="bg-[#2B2D31] border-[#1E1F22] text-white max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-[Outfit]">Creator bearbeiten</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Bearbeite die Einstellungen dieses Temp Voice Creators
+            </DialogDescription>
+          </DialogHeader>
+
+          {editCreator && (
+            <div className="space-y-6 py-4">
+              {/* Name Template */}
+              <div className="space-y-2">
+                <Label className="text-gray-300">Kanal-Name Template</Label>
+                <Input
+                  value={editCreator.name_template}
+                  onChange={(e) => setEditCreator({ ...editCreator, name_template: e.target.value })}
+                  className="bg-[#1E1F22] border-none text-white"
+                />
+                <p className="text-xs text-gray-500">
+                  Variablen: {"{user}"} = Benutzername, {"{number}"} = Nummer
+                </p>
+              </div>
+
+              {/* Numbering & Position */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Nummerierung</Label>
+                  <Select 
+                    value={editCreator.numbering_type} 
+                    onValueChange={(v) => setEditCreator({ ...editCreator, numbering_type: v })}
+                  >
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                      <SelectItem value="number" className="text-white">Zahlen (1, 2, 3)</SelectItem>
+                      <SelectItem value="letter" className="text-white">Buchstaben (a, b, c)</SelectItem>
+                      <SelectItem value="superscript" className="text-white">Hochgestellt (¹, ², ³)</SelectItem>
+                      <SelectItem value="subscript" className="text-white">Tiefgestellt (₁, ₂, ₃)</SelectItem>
+                      <SelectItem value="roman" className="text-white">Römisch (i, ii, iii)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Position</Label>
+                  <Select 
+                    value={editCreator.position} 
+                    onValueChange={(v) => setEditCreator({ ...editCreator, position: v })}
+                  >
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                      <SelectItem value="top" className="text-white">Oben (unter Creator)</SelectItem>
+                      <SelectItem value="bottom" className="text-white">Unten (Ende der Kategorie)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Default Settings */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Standard Benutzerlimit: {editCreator.default_limit || "∞"}</Label>
+                  <Slider
+                    value={[editCreator.default_limit || 0]}
+                    onValueChange={([v]) => setEditCreator({ ...editCreator, default_limit: v })}
+                    max={99}
+                    min={0}
+                    step={1}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Standard Bitrate</Label>
+                  <Select 
+                    value={String(editCreator.default_bitrate)} 
+                    onValueChange={(v) => setEditCreator({ ...editCreator, default_bitrate: parseInt(v) })}
+                  >
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                      <SelectItem value="8000" className="text-white">8 kbps</SelectItem>
+                      <SelectItem value="32000" className="text-white">32 kbps</SelectItem>
+                      <SelectItem value="64000" className="text-white">64 kbps</SelectItem>
+                      <SelectItem value="96000" className="text-white">96 kbps</SelectItem>
+                      <SelectItem value="128000" className="text-white">128 kbps</SelectItem>
+                      <SelectItem value="256000" className="text-white">256 kbps</SelectItem>
+                      <SelectItem value="384000" className="text-white">384 kbps</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Permissions */}
+              <div className="space-y-3">
+                <Label className="text-gray-300">Benutzer-Berechtigungen</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {permissionOptions.map((perm) => {
+                    const Icon = perm.icon;
+                    return (
+                      <div
+                        key={perm.key}
+                        className="flex items-center justify-between p-2 rounded bg-[#1E1F22]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-white">{perm.label}</span>
+                        </div>
+                        <Switch
+                          checked={editCreator[perm.key]}
+                          onCheckedChange={(v) => setEditCreator({ ...editCreator, [perm.key]: v })}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditCreator(null)} className="text-gray-400">
+              Abbrechen
+            </Button>
+            <Button 
+              onClick={() => {
+                updateCreator(editCreator.id, editCreator);
+                setEditCreator(null);
+              }} 
+              disabled={loading} 
+              className="bg-[#23A559] hover:bg-[#1A7F44] text-white"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Active Channels */}
       <Card className="bg-[#2B2D31] border-[#1E1F22]">
