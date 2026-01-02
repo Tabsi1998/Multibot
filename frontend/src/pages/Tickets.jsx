@@ -567,12 +567,250 @@ export default function Tickets() {
                 Abbrechen
               </Button>
               <Button onClick={createPanel} disabled={loading} className="bg-[#5865F2] hover:bg-[#4752C4] text-white">
+                <Send className="h-4 w-4 mr-2" />
                 Erstellen
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Edit Panel Dialog */}
+      <Dialog open={!!editPanel} onOpenChange={(open) => !open && setEditPanel(null)}>
+        <DialogContent className="bg-[#2B2D31] border-[#1E1F22] text-white max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-[Outfit]">Panel bearbeiten</DialogTitle>
+            <DialogDescription className="text-gray-400">
+              Bearbeite die Einstellungen dieses Ticket-Panels
+            </DialogDescription>
+          </DialogHeader>
+
+          {editPanel && (
+            <div className="space-y-6 py-4">
+              {/* Embed Settings */}
+              <div className="space-y-4">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  Embed Einstellungen
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Titel</Label>
+                    <Input
+                      value={editPanel.title}
+                      onChange={(e) => setEditPanel({ ...editPanel, title: e.target.value })}
+                      className="bg-[#1E1F22] border-none text-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Embed Farbe</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="color"
+                        value={editPanel.color}
+                        onChange={(e) => setEditPanel({ ...editPanel, color: e.target.value })}
+                        className="bg-[#1E1F22] border-none w-14 h-10 p-1 cursor-pointer"
+                      />
+                      <Input
+                        value={editPanel.color}
+                        onChange={(e) => setEditPanel({ ...editPanel, color: e.target.value })}
+                        className="bg-[#1E1F22] border-none text-white font-mono flex-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Beschreibung</Label>
+                  <Textarea
+                    value={editPanel.description}
+                    onChange={(e) => setEditPanel({ ...editPanel, description: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white resize-none"
+                    rows={3}
+                  />
+                </div>
+
+                {/* Preview */}
+                <div className="p-4 rounded-lg bg-[#36393F] space-y-3">
+                  <p className="text-xs text-gray-400 uppercase tracking-wider">Vorschau</p>
+                  <div 
+                    className="border-l-4 rounded-r bg-[#2F3136] p-4"
+                    style={{ borderColor: editPanel.color }}
+                  >
+                    <p className="text-white font-medium">{editPanel.title}</p>
+                    <p className="text-sm text-gray-300 mt-1">{editPanel.description}</p>
+                    <div className="mt-3">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-[#5865F2] text-white text-sm">
+                        <span>{editPanel.button_emoji}</span>
+                        <span>{editPanel.button_label}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Button Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Button Emoji</Label>
+                  <Input
+                    value={editPanel.button_emoji}
+                    onChange={(e) => setEditPanel({ ...editPanel, button_emoji: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Button Text</Label>
+                  <Input
+                    value={editPanel.button_label}
+                    onChange={(e) => setEditPanel({ ...editPanel, button_label: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Ticket Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Ticket-Kategorie</Label>
+                  <CategorySelector
+                    value={editPanel.ticket_category}
+                    onChange={(v) => setEditPanel({ ...editPanel, ticket_category: v })}
+                    placeholder="Kategorie für neue Tickets"
+                    guildId={guildId}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Ticket-Kanal Name</Label>
+                  <Input
+                    value={editPanel.ticket_name_template}
+                    onChange={(e) => setEditPanel({ ...editPanel, ticket_name_template: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white"
+                    placeholder="ticket-{number}"
+                  />
+                </div>
+              </div>
+
+              {/* Toggle Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[#1E1F22]">
+                  <div>
+                    <p className="text-white">Claimen aktivieren</p>
+                    <p className="text-xs text-gray-400">Supporter können Tickets beanspruchen</p>
+                  </div>
+                  <Switch
+                    checked={editPanel.claim_enabled}
+                    onCheckedChange={(v) => setEditPanel({ ...editPanel, claim_enabled: v })}
+                  />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[#1E1F22]">
+                  <div>
+                    <p className="text-white">Transcripts aktivieren</p>
+                    <p className="text-xs text-gray-400">Speichere Chat-Verläufe</p>
+                  </div>
+                  <Switch
+                    checked={editPanel.transcript_enabled}
+                    onCheckedChange={(v) => setEditPanel({ ...editPanel, transcript_enabled: v })}
+                  />
+                </div>
+              </div>
+
+              {/* Ticket Categories */}
+              <div className="space-y-4 border-t border-[#404249] pt-4">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <Grip className="h-4 w-4" />
+                  Ticket-Kategorien ({editPanel.categories?.length || 0})
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <Input
+                    value={newCategory.emoji}
+                    onChange={(e) => setNewCategory({ ...newCategory, emoji: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white text-center"
+                    placeholder="🔧"
+                  />
+                  <Input
+                    value={newCategory.name}
+                    onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white col-span-2"
+                    placeholder="Kategorie Name"
+                  />
+                  <Button type="button" onClick={addCategoryToEdit} variant="outline" className="border-[#5865F2] text-[#5865F2]">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {editPanel.categories?.length > 0 && (
+                  <div className="space-y-2">
+                    {editPanel.categories.map((cat, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 rounded bg-[#1E1F22]">
+                        <span className="text-white">{cat.emoji} {cat.name}</span>
+                        <Button type="button" onClick={() => removeCategoryFromEdit(index)} variant="ghost" size="icon" className="h-6 w-6 text-[#DA373C]">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Custom Fields */}
+              <div className="space-y-4 border-t border-[#404249] pt-4">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Benutzerdefinierte Felder ({editPanel.custom_fields?.length || 0})
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                  <Input
+                    value={newField.label}
+                    onChange={(e) => setNewField({ ...newField, label: e.target.value })}
+                    className="bg-[#1E1F22] border-none text-white col-span-2"
+                    placeholder="Feld-Name"
+                  />
+                  <Select value={newField.type} onValueChange={(v) => setNewField({ ...newField, type: v })}>
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                      <SelectItem value="text" className="text-white">Text</SelectItem>
+                      <SelectItem value="textarea" className="text-white">Mehrzeilig</SelectItem>
+                      <SelectItem value="dropdown" className="text-white">Dropdown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" onClick={addFieldToEdit} variant="outline" className="border-[#5865F2] text-[#5865F2]">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {editPanel.custom_fields?.length > 0 && (
+                  <div className="space-y-2">
+                    {editPanel.custom_fields.map((field, index) => (
+                      <div key={index} className="flex items-center justify-between p-2 rounded bg-[#1E1F22]">
+                        <span className="text-white">{field.label} <span className="text-gray-500">({field.type})</span></span>
+                        <Button type="button" onClick={() => removeFieldFromEdit(index)} variant="ghost" size="icon" className="h-6 w-6 text-[#DA373C]">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditPanel(null)} className="text-gray-400">
+              Abbrechen
+            </Button>
+            <Button onClick={updatePanel} disabled={loading} className="bg-[#23A559] hover:bg-[#1A7F44] text-white">
+              <Save className="h-4 w-4 mr-2" />
+              Speichern
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
