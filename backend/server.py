@@ -154,6 +154,12 @@ class GuildConfigUpdate(BaseModel):
     level_up_channel: Optional[str] = None
     level_roles: Optional[Dict[str, str]] = None
     ignored_channels: Optional[List[str]] = None
+    # Voice XP
+    voice_xp_enabled: Optional[bool] = None
+    voice_xp_per_minute: Optional[int] = None
+    voice_xp_min_users: Optional[int] = None
+    voice_afk_channel: Optional[str] = None
+    # Temp Channels
     temp_channels_enabled: Optional[bool] = None
     temp_channel_category: Optional[str] = None
     temp_channel_creator: Optional[str] = None
@@ -163,6 +169,14 @@ class GuildConfigUpdate(BaseModel):
     news_channel: Optional[str] = None
     admin_roles: Optional[List[str]] = None
     mod_roles: Optional[List[str]] = None
+    # Bot Appearance
+    bot_status: Optional[str] = None
+    bot_activity_type: Optional[str] = None
+    bot_activity_text: Optional[str] = None
+    bot_embed_color: Optional[str] = None
+    # Games
+    games_enabled: Optional[bool] = None
+    games_channel: Optional[str] = None
 
 class CustomCommandCreate(BaseModel):
     name: str
