@@ -166,7 +166,7 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="text-white font-[Outfit]">Bot Steuerung</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <div
               className={`w-3 h-3 rounded-full ${
@@ -214,6 +214,64 @@ export default function Dashboard() {
               ⚠️ Bitte konfiguriere zuerst den Bot Token in den Einstellungen
             </p>
           )}
+          
+          {/* Bot Logs Section */}
+          <div className="border-t border-[#1E1F22] pt-4">
+            <button
+              onClick={() => {
+                setShowLogs(!showLogs);
+                if (!showLogs) fetchBotLogs();
+              }}
+              className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors w-full"
+              data-testid="toggle-logs-btn"
+            >
+              <FileText className="h-4 w-4" />
+              <span className="text-sm">Bot Logs anzeigen</span>
+              {showLogs ? <ChevronUp className="h-4 w-4 ml-auto" /> : <ChevronDown className="h-4 w-4 ml-auto" />}
+            </button>
+            
+            {showLogs && (
+              <div className="mt-4 space-y-4">
+                <div className="flex justify-end">
+                  <Button
+                    onClick={fetchBotLogs}
+                    variant="ghost"
+                    size="sm"
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Aktualisieren
+                  </Button>
+                </div>
+                
+                {/* Error Logs */}
+                {botLogs.errors && (
+                  <div>
+                    <p className="text-[#DA373C] text-sm font-medium mb-2">❌ Fehler:</p>
+                    <pre className="bg-[#1E1F22] p-3 rounded-lg text-xs text-[#DA373C] overflow-x-auto max-h-40 overflow-y-auto font-mono">
+                      {botLogs.errors}
+                    </pre>
+                  </div>
+                )}
+                
+                {/* Standard Logs */}
+                {botLogs.logs && (
+                  <div>
+                    <p className="text-[#23A559] text-sm font-medium mb-2">📋 Logs:</p>
+                    <pre className="bg-[#1E1F22] p-3 rounded-lg text-xs text-gray-300 overflow-x-auto max-h-40 overflow-y-auto font-mono">
+                      {botLogs.logs}
+                    </pre>
+                  </div>
+                )}
+                
+                {!botLogs.logs && !botLogs.errors && (
+                  <p className="text-gray-500 text-sm text-center py-4">
+                    Keine Logs verfügbar. Starte den Bot um Logs zu sehen.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
