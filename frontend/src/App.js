@@ -1,52 +1,39 @@
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import DashboardLayout from "@/components/DashboardLayout";
+import Dashboard from "@/pages/Dashboard";
+import Moderation from "@/pages/Moderation";
+import Permissions from "@/pages/Permissions";
+import TempChannels from "@/pages/TempChannels";
+import Leveling from "@/pages/Leveling";
+import Welcome from "@/pages/Welcome";
+import CustomCommands from "@/pages/CustomCommands";
+import AISettings from "@/pages/AISettings";
+import News from "@/pages/News";
+import Settings from "@/pages/Settings";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
-
-  return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
 
 function App() {
   return (
-    <div className="App">
+    <div className="App min-h-screen bg-[#313338]">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
+          <Route path="/" element={<DashboardLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="moderation" element={<Moderation />} />
+            <Route path="permissions" element={<Permissions />} />
+            <Route path="temp-channels" element={<TempChannels />} />
+            <Route path="leveling" element={<Leveling />} />
+            <Route path="welcome" element={<Welcome />} />
+            <Route path="commands" element={<CustomCommands />} />
+            <Route path="ai" element={<AISettings />} />
+            <Route path="news" element={<News />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      <Toaster position="bottom-right" richColors />
     </div>
   );
 }

@@ -1,15 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone
-
+import asyncio
+import subprocess
+import sys
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,63 +21,19 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Import database helpers
+from database import (
+    get_guild_config, update_guild_config, get_user_data, update_user_data,
+    add_warning, get_warnings, clear_warnings, get_leaderboard,
+    add_custom_command, get_custom_commands, delete_custom_command,
+    add_news, get_news, delete_news, get_mod_logs, add_mod_log
+)
+
+# Create the main app
+app = FastAPI(title="Discord Bot Command Center API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
-
-
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
-    
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
-
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Configure logging
 logging.basicConfig(
@@ -83,6 +41,306 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+# Bot process tracking
+bot_process = None
+
+# ==================== MODELS ====================
+
+class BotConfig(BaseModel):
+    discord_token: Optional[str] = None
+    openai_api_key: Optional[str] = None
+
+class GuildConfigUpdate(BaseModel):
+    language: Optional[str] = None
+    prefix: Optional[str] = None
+    mod_log_channel: Optional[str] = None
+    mute_role: Optional[str] = None
+    warn_threshold: Optional[int] = None
+    warn_action: Optional[str] = None
+    welcome_enabled: Optional[bool] = None
+    welcome_channel: Optional[str] = None
+    welcome_message: Optional[str] = None
+    goodbye_enabled: Optional[bool] = None
+    goodbye_message: Optional[str] = None
+    auto_roles: Optional[List[str]] = None
+    leveling_enabled: Optional[bool] = None
+    xp_per_message: Optional[int] = None
+    xp_cooldown: Optional[int] = None
+    level_up_channel: Optional[str] = None
+    level_roles: Optional[Dict[str, str]] = None
+    ignored_channels: Optional[List[str]] = None
+    temp_channels_enabled: Optional[bool] = None
+    temp_channel_category: Optional[str] = None
+    temp_channel_creator: Optional[str] = None
+    ai_enabled: Optional[bool] = None
+    ai_channel: Optional[str] = None
+    ai_system_prompt: Optional[str] = None
+    news_channel: Optional[str] = None
+    admin_roles: Optional[List[str]] = None
+    mod_roles: Optional[List[str]] = None
+
+class CustomCommandCreate(BaseModel):
+    name: str
+    response: str
+
+class NewsCreate(BaseModel):
+    title: str
+    content: str
+    scheduled_for: Optional[str] = None
+
+class PermissionUpdate(BaseModel):
+    command: str
+    role_ids: List[str]
+
+# ==================== BOT MANAGEMENT ====================
+
+@api_router.get("/")
+async def root():
+    return {"message": "Discord Bot Command Center API", "status": "online"}
+
+@api_router.get("/bot/status")
+async def get_bot_status():
+    """Get bot running status"""
+    global bot_process
+    is_running = bot_process is not None and bot_process.poll() is None
+    token_set = bool(os.environ.get('DISCORD_BOT_TOKEN'))
+    
+    return {
+        "running": is_running,
+        "token_configured": token_set,
+        "openai_configured": bool(os.environ.get('OPENAI_API_KEY') or os.environ.get('EMERGENT_LLM_KEY'))
+    }
+
+@api_router.post("/bot/configure")
+async def configure_bot(config: BotConfig):
+    """Configure bot tokens"""
+    env_path = ROOT_DIR / '.env'
+    env_content = env_path.read_text() if env_path.exists() else ""
+    
+    lines = env_content.strip().split('\n') if env_content.strip() else []
+    env_dict = {}
+    for line in lines:
+        if '=' in line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            env_dict[key.strip()] = value.strip().strip('"')
+    
+    if config.discord_token:
+        env_dict['DISCORD_BOT_TOKEN'] = config.discord_token
+        os.environ['DISCORD_BOT_TOKEN'] = config.discord_token
+    
+    if config.openai_api_key:
+        env_dict['OPENAI_API_KEY'] = config.openai_api_key
+        os.environ['OPENAI_API_KEY'] = config.openai_api_key
+    
+    # Write back
+    new_content = '\n'.join([f'{k}="{v}"' for k, v in env_dict.items()])
+    env_path.write_text(new_content)
+    
+    return {"success": True, "message": "Konfiguration gespeichert"}
+
+@api_router.post("/bot/start")
+async def start_bot(background_tasks: BackgroundTasks):
+    """Start the Discord bot"""
+    global bot_process
+    
+    if bot_process and bot_process.poll() is None:
+        return {"success": False, "message": "Bot läuft bereits"}
+    
+    if not os.environ.get('DISCORD_BOT_TOKEN'):
+        raise HTTPException(status_code=400, detail="Discord Token nicht konfiguriert")
+    
+    # Start bot in background
+    bot_process = subprocess.Popen(
+        [sys.executable, str(ROOT_DIR / 'discord_bot.py')],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    
+    return {"success": True, "message": "Bot wird gestartet..."}
+
+@api_router.post("/bot/stop")
+async def stop_bot():
+    """Stop the Discord bot"""
+    global bot_process
+    
+    if bot_process and bot_process.poll() is None:
+        bot_process.terminate()
+        bot_process.wait(timeout=5)
+        bot_process = None
+        return {"success": True, "message": "Bot gestoppt"}
+    
+    return {"success": False, "message": "Bot läuft nicht"}
+
+# ==================== GUILD CONFIG ====================
+
+@api_router.get("/guilds")
+async def list_guilds():
+    """List all configured guilds"""
+    guilds = await db.guilds.find({}, {"_id": 0}).to_list(100)
+    return {"guilds": guilds}
+
+@api_router.get("/guilds/{guild_id}")
+async def get_guild(guild_id: str):
+    """Get guild configuration"""
+    config = await get_guild_config(guild_id)
+    return config
+
+@api_router.put("/guilds/{guild_id}")
+async def update_guild(guild_id: str, updates: GuildConfigUpdate):
+    """Update guild configuration"""
+    update_dict = {k: v for k, v in updates.model_dump().items() if v is not None}
+    config = await update_guild_config(guild_id, update_dict)
+    return config
+
+@api_router.get("/guilds/{guild_id}/stats")
+async def get_guild_stats(guild_id: str):
+    """Get guild statistics"""
+    users = await db.users.count_documents({"guild_id": guild_id})
+    warnings = await db.warnings.count_documents({"guild_id": guild_id})
+    commands = await db.custom_commands.count_documents({"guild_id": guild_id})
+    news = await db.news.count_documents({"guild_id": guild_id})
+    
+    # Top users by XP
+    top_users = await get_leaderboard(guild_id, 5)
+    
+    # Recent mod actions
+    mod_logs = await get_mod_logs(guild_id, 10)
+    
+    return {
+        "total_users": users,
+        "total_warnings": warnings,
+        "total_commands": commands,
+        "total_news": news,
+        "top_users": top_users,
+        "recent_mod_actions": mod_logs
+    }
+
+# ==================== MODERATION ====================
+
+@api_router.get("/guilds/{guild_id}/warnings")
+async def list_warnings(guild_id: str, user_id: Optional[str] = None):
+    """List warnings"""
+    if user_id:
+        warnings = await get_warnings(guild_id, user_id)
+    else:
+        warnings = await db.warnings.find({"guild_id": guild_id}, {"_id": 0}).to_list(100)
+    return {"warnings": warnings}
+
+@api_router.delete("/guilds/{guild_id}/warnings/{user_id}")
+async def clear_user_warnings(guild_id: str, user_id: str):
+    """Clear warnings for a user"""
+    count = await clear_warnings(guild_id, user_id)
+    return {"deleted": count}
+
+@api_router.get("/guilds/{guild_id}/modlogs")
+async def list_mod_logs(guild_id: str, limit: int = 50):
+    """Get moderation logs"""
+    logs = await get_mod_logs(guild_id, limit)
+    return {"logs": logs}
+
+# ==================== LEVELING ====================
+
+@api_router.get("/guilds/{guild_id}/leaderboard")
+async def get_guild_leaderboard(guild_id: str, limit: int = 10):
+    """Get XP leaderboard"""
+    users = await get_leaderboard(guild_id, limit)
+    return {"leaderboard": users}
+
+@api_router.get("/guilds/{guild_id}/users/{user_id}")
+async def get_user(guild_id: str, user_id: str):
+    """Get user data"""
+    user = await get_user_data(guild_id, user_id)
+    return user
+
+@api_router.put("/guilds/{guild_id}/users/{user_id}")
+async def update_user(guild_id: str, user_id: str, xp: Optional[int] = None, level: Optional[int] = None):
+    """Update user XP/level"""
+    updates = {}
+    if xp is not None:
+        updates['xp'] = xp
+    if level is not None:
+        updates['level'] = level
+    
+    user = await update_user_data(guild_id, user_id, updates)
+    return user
+
+# ==================== CUSTOM COMMANDS ====================
+
+@api_router.get("/guilds/{guild_id}/commands")
+async def list_custom_commands(guild_id: str):
+    """List custom commands"""
+    commands = await get_custom_commands(guild_id)
+    return {"commands": commands}
+
+@api_router.post("/guilds/{guild_id}/commands")
+async def create_custom_command(guild_id: str, cmd: CustomCommandCreate):
+    """Create a custom command"""
+    command = await add_custom_command(guild_id, cmd.name, cmd.response, "dashboard")
+    return command
+
+@api_router.delete("/guilds/{guild_id}/commands/{name}")
+async def remove_custom_command(guild_id: str, name: str):
+    """Delete a custom command"""
+    deleted = await delete_custom_command(guild_id, name)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Command not found")
+    return {"deleted": True}
+
+# ==================== NEWS ====================
+
+@api_router.get("/guilds/{guild_id}/news")
+async def list_news(guild_id: str):
+    """List news"""
+    news = await get_news(guild_id)
+    return {"news": news}
+
+@api_router.post("/guilds/{guild_id}/news")
+async def create_news(guild_id: str, news: NewsCreate):
+    """Create news"""
+    item = await add_news(guild_id, news.title, news.content, news.scheduled_for)
+    return item
+
+@api_router.delete("/guilds/{guild_id}/news/{news_id}")
+async def remove_news(guild_id: str, news_id: str):
+    """Delete news"""
+    deleted = await delete_news(news_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="News not found")
+    return {"deleted": True}
+
+# ==================== PERMISSIONS ====================
+
+@api_router.get("/guilds/{guild_id}/permissions")
+async def get_permissions(guild_id: str):
+    """Get command permissions"""
+    config = await get_guild_config(guild_id)
+    return {
+        "command_permissions": config.get('command_permissions', {}),
+        "admin_roles": config.get('admin_roles', []),
+        "mod_roles": config.get('mod_roles', [])
+    }
+
+@api_router.put("/guilds/{guild_id}/permissions")
+async def update_permissions(guild_id: str, update: PermissionUpdate):
+    """Update command permissions"""
+    config = await get_guild_config(guild_id)
+    permissions = config.get('command_permissions', {})
+    permissions[update.command] = update.role_ids
+    await update_guild_config(guild_id, {"command_permissions": permissions})
+    return {"success": True}
+
+# Include the router
+app.include_router(api_router)
+
+# CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
