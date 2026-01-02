@@ -1,0 +1,126 @@
+{
+  "identity": "E1",
+  "project_name": "Discord Bot Command Center",
+  "design_philosophy": {
+    "core_concept": "The Control Room",
+    "vibe": "Tactile, High-Density, Gamer-Chic, Dark Mode Native",
+    "principles": [
+      "Fusion over Imitation: Mix Discord's native aesthetic with 'Cyber-Security' dashboard vibes.",
+      "Emotion First: Users should feel powerful and in control.",
+      "Content is King: Data density is high, but hierarchy is strict.",
+      "Negative Space: Use it to group functional areas, not just for decoration.",
+      "Contrast: High contrast for readability in dark mode. Neon accents against deep charcoal."
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Outfit, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "weights": {
+      "headings": "font-bold (700) or font-black (900)",
+      "body": "font-normal (400) or font-medium (500)"
+    },
+    "usage_rules": [
+      "Headings (h1-h3) must use 'Outfit'.",
+      "UI Labels and Body text use 'Inter'.",
+      "IDs, Tokens, Logs, and Code Snippets MUST use 'JetBrains Mono'.",
+      "Headings > 32px must use 'tracking-tight'.",
+      "Overlines/Labels must be Uppercase + 'tracking-widest' + 'text-xs'."
+    ]
+  },
+  "colors": {
+    "palette_name": "Electric Void",
+    "mode": "dark",
+    "base": {
+      "background": "#313338",
+      "foreground": "#F2F3F5",
+      "card": "#2B2D31",
+      "card_foreground": "#DBDEE1",
+      "popover": "#1E1F22",
+      "popover_foreground": "#DBDEE1",
+      "border": "#1E1F22"
+    },
+    "brand": {
+      "primary": "#5865F2",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#404249",
+      "secondary_foreground": "#FFFFFF",
+      "accent": "#EB459E",
+      "accent_foreground": "#FFFFFF"
+    },
+    "functional": {
+      "success": "#23A559",
+      "warning": "#F0B232",
+      "destructive": "#DA373C",
+      "info": "#5865F2"
+    },
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at center, rgba(88, 101, 242, 0.15) 0%, rgba(49, 51, 56, 0) 70%)",
+      "active_border": "linear-gradient(90deg, #5865F2, #EB459E)"
+    }
+  },
+  "layout": {
+    "grid_system": "The Control Room Grid",
+    "spacing_scale": "Generous (p-6, p-8) for containers, Tight (gap-2, gap-4) for data density.",
+    "container_style": "Bento Grid",
+    "rules": [
+      "Sidebar Navigation: Fixed width (240px-280px), full height.",
+      "Top Bar: Sticky, glassmorphism effect.",
+      "Dashboard Home: Bento grid layout (mix of 1x1, 2x1, 2x2 tiles).",
+      "Settings Pages: Single column, max-width-3xl, centered or left-aligned."
+    ]
+  },
+  "components": {
+    "surface_style": "Grid Borders (The Technical Look)",
+    "cards": {
+      "style": "Flat background (#2B2D31), 1px border (#1E1F22), no shadow by default.",
+      "hover": "Border color shifts to Primary (#5865F2), subtle scale (1.01)."
+    },
+    "buttons": {
+      "primary": "bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-md font-medium transition-all shadow-[0_4px_0_0_rgba(0,0,0,0.2)] active:shadow-none active:translate-y-[2px]",
+      "secondary": "bg-[#4E5058] hover:bg-[#6D6F78] text-white rounded-md",
+      "ghost": "hover:bg-[#3F4147] text-gray-300 hover:text-white"
+    },
+    "inputs": {
+      "style": "bg-[#1E1F22] border-none text-white placeholder:text-gray-500 focus:ring-2 focus:ring-[#5865F2]"
+    },
+    "navigation": {
+      "sidebar_item": "flex items-center gap-3 px-3 py-2 rounded-md text-gray-400 hover:bg-[#3F4147] hover:text-gray-100 transition-colors aria-[current=page]:bg-[#404249] aria-[current=page]:text-white"
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Subtle noise overlay on the main background (opacity 0.03).",
+    "glassmorphism": "Used ONLY for sticky headers and modal overlays (backdrop-blur-md bg-black/40).",
+    "motion": {
+      "hover": "transition-all duration-200 ease-out",
+      "page_load": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+    }
+  },
+  "assets": {
+    "icons": "Lucide React (default) or Phosphor Icons (for more weight).",
+    "image_urls": {
+      "hero_background": "https://images.unsplash.com/photo-1764258560300-2346b28b4e7c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGN5YmVyJTIwdGVjaG5vbG9neSUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc2NzM1MjkwNHww&ixlib=rb-4.1.0&q=85",
+      "community_showcase": "https://images.unsplash.com/photo-1766051666522-9cfa12675f5b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwzfHxnYW1pbmclMjBzZXR1cCUyMG5lb24lMjBsaWdodHN8ZW58MHx8fHwxNzY3MzUyOTA2fDA&ixlib=rb-4.1.0&q=85",
+      "placeholder_avatar": "https://cdn.discordapp.com/embed/avatars/0.png"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. SETUP: Install 'lucide-react', 'recharts', 'sonner', 'clsx', 'tailwind-merge'.",
+    "2. THEME: Update 'tailwind.config.js' and 'index.css' to match the 'Electric Void' palette exactly. Override the default shadcn variables.",
+    "3. LAYOUT: Create a 'DashboardLayout' component with a fixed sidebar and scrollable main area.",
+    "4. COMPONENTS: Customize Shadcn components. Remove the default 'radius' variable usage if it conflicts with the specific rounded-md look.",
+    "5. PAGES: Implement the 'Bento Grid' for the Dashboard Home.",
+    "6. CRITICAL: Ensure all text has sufficient contrast against the dark backgrounds. Use 'text-gray-300' for secondary text, not darker.",
+    "7. DATA-TESTID: Add 'data-testid' to all interactive elements (buttons, inputs, sidebar links)."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for text unless it's a very large hero title.",
+    "Avoid 'Inter' for headings. Use 'Outfit'.",
+    "Use 'JetBrains Mono' for any ID, hash, or code-like data.",
+    "Ensure the 'Active' state of sidebar links is visually distinct (bg color + text color change).",
+    "Use 'Sonner' for all toast notifications.",
+    "Never use native HTML alerts or confirms. Use Shadcn Dialogs."
+  ]
+}
