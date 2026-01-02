@@ -7,6 +7,8 @@ import Dashboard from "@/pages/Dashboard";
 import Moderation from "@/pages/Moderation";
 import Permissions from "@/pages/Permissions";
 import TempChannels from "@/pages/TempChannels";
+import ReactionRoles from "@/pages/ReactionRoles";
+import Games from "@/pages/Games";
 import Leveling from "@/pages/Leveling";
 import Welcome from "@/pages/Welcome";
 import CustomCommands from "@/pages/CustomCommands";
