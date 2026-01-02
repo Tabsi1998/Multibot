@@ -1,29 +1,54 @@
 # Schnellstart / Quick Start Guide
 
-## 🚀 One-Command Installation
+## 🚀 One-Command Installation (VOLLAUTOMATISCH)
 
-### Linux / macOS
+### Linux (Ubuntu/Debian/Fedora/Arch)
 
 ```bash
-# Repository klonen
+# 1. Repository klonen
 git clone https://github.com/your-repo/multibot-command-center.git
 cd multibot-command-center
 
-# Installer ausführen (installiert alle Abhängigkeiten automatisch)
+# 2. Installer ausführen - ALLES wird automatisch installiert!
 chmod +x install.sh
 ./install.sh
 
-# Starten
+# 3. Starten
 ./start.sh
 ```
 
-### Was der Installer macht:
-1. Prüft und installiert Python 3.11+, Node.js 18+, MongoDB
-2. Erstellt Python Virtual Environment
-3. Installiert alle Python- und Node.js-Abhängigkeiten
-4. Konfiguriert Umgebungsvariablen
-5. Erstellt Start- und Stop-Skripte
-6. Optional: Erstellt Systemd-Service für Autostart
+**Das war's!** Der Installer installiert automatisch:
+- ✅ Python 3.11+
+- ✅ Node.js 20.x
+- ✅ MongoDB 7.0
+- ✅ Yarn
+- ✅ Alle Python-Pakete
+- ✅ Alle Node.js-Pakete
+
+### macOS
+
+```bash
+# Homebrew wird automatisch installiert falls nicht vorhanden
+git clone https://github.com/your-repo/multibot-command-center.git
+cd multibot-command-center
+chmod +x install.sh && ./install.sh
+./start.sh
+```
+
+### Verfügbare Befehle nach Installation
+
+| Befehl | Beschreibung |
+|--------|--------------|
+| `./start.sh` | Starten (Backend + Frontend + MongoDB) |
+| `./stop.sh` | Stoppen |
+| `./restart.sh` | Neustarten |
+| `./status.sh` | Status prüfen |
+
+### Zugriff
+
+Nach dem Start:
+- **Lokal:** http://localhost:3000
+- **Netzwerk:** http://DEINE-IP:3000 (andere Geräte können zugreifen!)
 
 ---
 
