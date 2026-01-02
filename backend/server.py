@@ -405,6 +405,50 @@ async def get_bot_logs(lines: int = 50, log_type: str = "all"):
     
     return result
 
+@api_router.post("/bot/test")
+async def test_bot_config():
+    """Test if bot can start (checks imports and token)"""
+    issues = []
+    
+    # Check token
+    token = os.environ.get('DISCORD_BOT_TOKEN')
+    if not token:
+        issues.append("DISCORD_BOT_TOKEN nicht gesetzt")
+    elif len(token) < 50:
+        issues.append("DISCORD_BOT_TOKEN scheint ungültig zu sein (zu kurz)")
+    
+    # Test imports
+    try:
+        import discord
+        from discord import app_commands
+        from discord.ext import commands
+    except ImportError as e:
+        issues.append(f"discord.py Import-Fehler: {e}")
+    
+    try:
+        from database import get_guild_config
+    except ImportError as e:
+        issues.append(f"database Import-Fehler: {e}")
+    
+    try:
+        from translations import t
+    except ImportError as e:
+        issues.append(f"translations Import-Fehler: {e}")
+    
+    # Check MongoDB
+    try:
+        from motor.motor_asyncio import AsyncIOMotorClient
+        mongo_url = os.environ.get('MONGO_URL')
+        if not mongo_url:
+            issues.append("MONGO_URL nicht gesetzt")
+    except Exception as e:
+        issues.append(f"MongoDB Fehler: {e}")
+    
+    if issues:
+        return {"success": False, "issues": issues}
+    
+    return {"success": True, "message": "Alle Checks bestanden!"}
+
 # ==================== GUILD CONFIG ====================
 
 @api_router.get("/guilds")
