@@ -845,7 +845,7 @@ async def botinfo(interaction: discord.Interaction):
     
     embed.add_field(
         name="🔗 Links",
-        value="[Dashboard](https://alleskoennerbot.preview.emergentagent.com) • [Support](#)",
+        value="[Dashboard](https://discord-master-4.preview.emergentagent.com) • [Support](#)",
         inline=False
     )
     
