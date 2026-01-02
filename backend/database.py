@@ -553,3 +553,285 @@ async def get_active_voice_sessions(guild_id: str) -> list:
     ).to_list(1000)
     return sessions
 
+# ==================== TICKET SYSTEM ====================
+
+ticket_panels_collection = db.ticket_panels
+tickets_collection = db.tickets
+
+async def create_ticket_panel(guild_id: str, panel_data: dict) -> dict:
+    """Create a ticket panel configuration"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    panel = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "channel_id": panel_data.get("channel_id"),
+        "message_id": None,  # Set when bot creates the message
+        "title": panel_data.get("title", "🎫 Support Tickets"),
+        "description": panel_data.get("description", "Klicke auf den Button um ein Ticket zu erstellen."),
+        "color": panel_data.get("color", "#5865F2"),
+        "button_label": panel_data.get("button_label", "Ticket erstellen"),
+        "button_emoji": panel_data.get("button_emoji", "🎫"),
+        "ticket_category": panel_data.get("ticket_category"),  # Category for ticket channels
+        "ticket_name_template": panel_data.get("ticket_name_template", "ticket-{number}"),
+        "categories": panel_data.get("categories", []),  # Dropdown categories
+        "custom_fields": panel_data.get("custom_fields", []),  # Custom form fields
+        "support_roles": panel_data.get("support_roles", []),  # Roles that can see/claim tickets
+        "ping_roles": panel_data.get("ping_roles", []),  # Roles to ping on new ticket
+        "claim_enabled": panel_data.get("claim_enabled", True),
+        "transcript_enabled": panel_data.get("transcript_enabled", True),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "ticket_counter": 0
+    }
+    
+    await ticket_panels_collection.insert_one(panel)
+    return {k: v for k, v in panel.items() if k != "_id"}
+
+async def get_ticket_panels(guild_id: str) -> list:
+    """Get all ticket panels for a guild"""
+    panels = await ticket_panels_collection.find(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    ).to_list(50)
+    return panels
+
+async def get_ticket_panel(panel_id: str) -> dict:
+    """Get a specific ticket panel"""
+    panel = await ticket_panels_collection.find_one(
+        {"id": panel_id},
+        {"_id": 0}
+    )
+    return panel
+
+async def update_ticket_panel(panel_id: str, updates: dict) -> bool:
+    """Update a ticket panel"""
+    result = await ticket_panels_collection.update_one(
+        {"id": panel_id},
+        {"$set": updates}
+    )
+    return result.modified_count > 0
+
+async def delete_ticket_panel(panel_id: str) -> bool:
+    """Delete a ticket panel"""
+    result = await ticket_panels_collection.delete_one({"id": panel_id})
+    return result.deleted_count > 0
+
+async def increment_ticket_counter(panel_id: str) -> int:
+    """Increment and return the ticket counter"""
+    result = await ticket_panels_collection.find_one_and_update(
+        {"id": panel_id},
+        {"$inc": {"ticket_counter": 1}},
+        return_document=True
+    )
+    return result.get("ticket_counter", 1) if result else 1
+
+async def create_ticket(guild_id: str, panel_id: str, ticket_data: dict) -> dict:
+    """Create a new ticket"""
+    import uuid
+    from datetime import datetime, timezone
+    
+    ticket = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "panel_id": panel_id,
+        "channel_id": ticket_data.get("channel_id"),
+        "user_id": ticket_data.get("user_id"),
+        "ticket_number": ticket_data.get("ticket_number", 1),
+        "category": ticket_data.get("category"),
+        "custom_fields": ticket_data.get("custom_fields", {}),
+        "status": "open",  # open, claimed, closed
+        "claimed_by": None,
+        "claimed_at": None,
+        "closed_by": None,
+        "closed_at": None,
+        "transcript_url": None,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await tickets_collection.insert_one(ticket)
+    return {k: v for k, v in ticket.items() if k != "_id"}
+
+async def get_tickets(guild_id: str, status: str = None) -> list:
+    """Get tickets for a guild"""
+    query = {"guild_id": guild_id}
+    if status:
+        query["status"] = status
+    
+    tickets = await tickets_collection.find(
+        query,
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return tickets
+
+async def get_ticket(ticket_id: str) -> dict:
+    """Get a specific ticket"""
+    ticket = await tickets_collection.find_one(
+        {"id": ticket_id},
+        {"_id": 0}
+    )
+    return ticket
+
+async def get_ticket_by_channel(channel_id: str) -> dict:
+    """Get ticket by channel ID"""
+    ticket = await tickets_collection.find_one(
+        {"channel_id": channel_id},
+        {"_id": 0}
+    )
+    return ticket
+
+async def update_ticket(ticket_id: str, updates: dict) -> bool:
+    """Update a ticket"""
+    result = await tickets_collection.update_one(
+        {"id": ticket_id},
+        {"$set": updates}
+    )
+    return result.modified_count > 0
+
+async def claim_ticket(ticket_id: str, user_id: str) -> bool:
+    """Claim a ticket"""
+    from datetime import datetime, timezone
+    result = await tickets_collection.update_one(
+        {"id": ticket_id, "status": "open"},
+        {"$set": {
+            "claimed_by": user_id,
+            "claimed_at": datetime.now(timezone.utc).isoformat(),
+            "status": "claimed"
+        }}
+    )
+    return result.modified_count > 0
+
+async def close_ticket(ticket_id: str, user_id: str) -> bool:
+    """Close a ticket"""
+    from datetime import datetime, timezone
+    result = await tickets_collection.update_one(
+        {"id": ticket_id},
+        {"$set": {
+            "closed_by": user_id,
+            "closed_at": datetime.now(timezone.utc).isoformat(),
+            "status": "closed"
+        }}
+    )
+    return result.modified_count > 0
+
+async def get_ticket_stats(guild_id: str) -> dict:
+    """Get ticket statistics"""
+    open_count = await tickets_collection.count_documents({"guild_id": guild_id, "status": "open"})
+    claimed_count = await tickets_collection.count_documents({"guild_id": guild_id, "status": "claimed"})
+    closed_count = await tickets_collection.count_documents({"guild_id": guild_id, "status": "closed"})
+    total_count = await tickets_collection.count_documents({"guild_id": guild_id})
+    
+    return {
+        "open": open_count,
+        "claimed": claimed_count,
+        "closed": closed_count,
+        "total": total_count
+    }
+
+# ==================== MULTI TEMP VOICE CREATORS ====================
+
+temp_creators_collection = db.temp_creators
+
+async def create_temp_creator(guild_id: str, creator_data: dict) -> dict:
+    """Create a temp voice channel creator configuration"""
+    import uuid
+    
+    creator = {
+        "id": str(uuid.uuid4()),
+        "guild_id": guild_id,
+        "channel_id": creator_data.get("channel_id"),  # The creator voice channel
+        "category_id": creator_data.get("category_id"),  # Where to create temp channels
+        "name_template": creator_data.get("name_template", "🔊 {user}'s Kanal"),
+        "numbering_type": creator_data.get("numbering_type", "number"),  # number, letter, superscript
+        "position": creator_data.get("position", "bottom"),  # top, bottom
+        "default_limit": creator_data.get("default_limit", 0),
+        "default_bitrate": creator_data.get("default_bitrate", 64000),
+        # Permissions
+        "allow_rename": creator_data.get("allow_rename", True),
+        "allow_limit": creator_data.get("allow_limit", True),
+        "allow_lock": creator_data.get("allow_lock", True),
+        "allow_hide": creator_data.get("allow_hide", True),
+        "allow_kick": creator_data.get("allow_kick", True),
+        "allow_permit": creator_data.get("allow_permit", True),
+        "allow_bitrate": creator_data.get("allow_bitrate", True),
+        "enabled": True,
+        "channel_counter": 0
+    }
+    
+    await temp_creators_collection.insert_one(creator)
+    return {k: v for k, v in creator.items() if k != "_id"}
+
+async def get_temp_creators(guild_id: str) -> list:
+    """Get all temp voice creators for a guild"""
+    creators = await temp_creators_collection.find(
+        {"guild_id": guild_id},
+        {"_id": 0}
+    ).to_list(50)
+    return creators
+
+async def get_temp_creator(creator_id: str) -> dict:
+    """Get a specific temp creator"""
+    creator = await temp_creators_collection.find_one(
+        {"id": creator_id},
+        {"_id": 0}
+    )
+    return creator
+
+async def get_temp_creator_by_channel(channel_id: str) -> dict:
+    """Get temp creator by channel ID"""
+    creator = await temp_creators_collection.find_one(
+        {"channel_id": channel_id},
+        {"_id": 0}
+    )
+    return creator
+
+async def update_temp_creator(creator_id: str, updates: dict) -> bool:
+    """Update a temp creator"""
+    result = await temp_creators_collection.update_one(
+        {"id": creator_id},
+        {"$set": updates}
+    )
+    return result.modified_count > 0
+
+async def delete_temp_creator(creator_id: str) -> bool:
+    """Delete a temp creator"""
+    result = await temp_creators_collection.delete_one({"id": creator_id})
+    return result.deleted_count > 0
+
+async def increment_temp_creator_counter(creator_id: str) -> int:
+    """Increment and return the channel counter"""
+    result = await temp_creators_collection.find_one_and_update(
+        {"id": creator_id},
+        {"$inc": {"channel_counter": 1}},
+        return_document=True
+    )
+    return result.get("channel_counter", 1) if result else 1
+
+def get_numbering(number: int, numbering_type: str) -> str:
+    """Convert number to the specified format"""
+    if numbering_type == "letter":
+        # 1=a, 2=b, 3=c, ..., 26=z, 27=aa, etc.
+        result = ""
+        while number > 0:
+            number -= 1
+            result = chr(ord('a') + (number % 26)) + result
+            number //= 26
+        return result
+    elif numbering_type == "superscript":
+        superscripts = "⁰¹²³⁴⁵⁶⁷⁸⁹"
+        return "".join(superscripts[int(d)] for d in str(number))
+    elif numbering_type == "subscript":
+        subscripts = "₀₁₂₃₄₅₆₇₈₉"
+        return "".join(subscripts[int(d)] for d in str(number))
+    elif numbering_type == "roman":
+        # Simple roman numerals for 1-50
+        val = [50, 40, 10, 9, 5, 4, 1]
+        syms = ['L', 'XL', 'X', 'IX', 'V', 'IV', 'I']
+        result = ""
+        for i, v in enumerate(val):
+            while number >= v:
+                result += syms[i]
+                number -= v
+        return result.lower()
+    else:  # number
+        return str(number)
