@@ -530,6 +530,19 @@ async def update_permissions(guild_id: str, update: PermissionUpdate):
 # Include the router
 app.include_router(api_router)
 
+# Root route (for direct backend access)
+@app.get("/")
+async def root_redirect():
+    """Root route - shows API info"""
+    return {
+        "name": "MultiBot Command Center API",
+        "version": "1.0.0",
+        "status": "online",
+        "docs": "/docs",
+        "api": "/api/",
+        "message": "Das Dashboard läuft auf Port 3000. API-Endpunkte sind unter /api/ verfügbar."
+    }
+
 # CORS
 app.add_middleware(
     CORSMiddleware,
