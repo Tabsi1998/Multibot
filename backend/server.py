@@ -607,6 +607,103 @@ async def update_permissions(guild_id: str, update: PermissionUpdate):
     await update_guild_config(guild_id, {"command_permissions": permissions})
     return {"success": True}
 
+# ==================== TEMP CHANNELS API ====================
+
+@api_router.get("/guilds/{guild_id}/temp-channels")
+async def list_temp_channels(guild_id: str):
+    """List all active temp channels"""
+    from database import get_temp_channels
+    channels = await get_temp_channels(guild_id)
+    return {"channels": channels}
+
+@api_router.delete("/guilds/{guild_id}/temp-channels/{channel_id}")
+async def remove_temp_channel(guild_id: str, channel_id: str):
+    """Delete a temp channel record"""
+    from database import delete_temp_channel
+    deleted = await delete_temp_channel(channel_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Channel not found")
+    return {"deleted": True}
+
+# ==================== REACTION ROLES API ====================
+
+class ReactionRoleCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    channel_id: str
+    type: str = "button"
+    roles: List[Dict[str, str]]
+    color: Optional[str] = "#5865F2"
+
+@api_router.get("/guilds/{guild_id}/reaction-roles")
+async def list_reaction_roles(guild_id: str):
+    """List all reaction roles"""
+    from database import get_reaction_roles
+    rrs = await get_reaction_roles(guild_id)
+    return {"reaction_roles": rrs}
+
+@api_router.post("/guilds/{guild_id}/reaction-roles")
+async def create_reaction_role_api(guild_id: str, rr: ReactionRoleCreate):
+    """Create a reaction role setup"""
+    from database import create_reaction_role
+    import uuid
+    
+    # For web-created reaction roles, we store the config
+    # The actual Discord message will be created by the bot when it connects
+    results = []
+    for role_config in rr.roles:
+        result = await create_reaction_role(
+            guild_id=guild_id,
+            channel_id=rr.channel_id,
+            message_id="pending",  # Will be set when bot creates the message
+            emoji=role_config.get("emoji", ""),
+            role_id=role_config.get("role_id", ""),
+            role_type=rr.type,
+            title=rr.title,
+            description=rr.description
+        )
+        results.append(result)
+    
+    return {"created": len(results), "reaction_roles": results}
+
+@api_router.delete("/guilds/{guild_id}/reaction-roles/{rr_id}")
+async def remove_reaction_role(guild_id: str, rr_id: str):
+    """Delete a reaction role"""
+    from database import delete_reaction_role
+    deleted = await delete_reaction_role(rr_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Reaction role not found")
+    return {"deleted": True}
+
+# ==================== GAMES API ====================
+
+@api_router.get("/guilds/{guild_id}/games")
+async def list_active_games(guild_id: str):
+    """List all active games"""
+    from database import get_active_games
+    games = await get_active_games(guild_id)
+    return {"games": games}
+
+@api_router.get("/guilds/{guild_id}/games/stats")
+async def get_game_stats(guild_id: str):
+    """Get game statistics"""
+    total_games = await db.games.count_documents({"guild_id": guild_id})
+    
+    # Get top player
+    pipeline = [
+        {"$match": {"guild_id": guild_id, "winner_id": {"$ne": None}}},
+        {"$group": {"_id": "$winner_id", "wins": {"$sum": 1}}},
+        {"$sort": {"wins": -1}},
+        {"$limit": 1}
+    ]
+    top_player_result = await db.games.aggregate(pipeline).to_list(1)
+    top_player = top_player_result[0]["_id"][:8] + "..." if top_player_result else None
+    
+    return {
+        "total_games": total_games,
+        "top_player": top_player
+    }
+
 # Include the router
 app.include_router(api_router)
 
