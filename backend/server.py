@@ -704,6 +704,94 @@ async def get_game_stats(guild_id: str):
         "top_player": top_player
     }
 
+# ==================== SERVER DATA SYNC API ====================
+
+@api_router.get("/guilds/{guild_id}/server-data")
+async def get_server_data_api(guild_id: str):
+    """Get cached server data (roles, channels, emojis)"""
+    from database import get_server_data
+    data = await get_server_data(guild_id)
+    return data
+
+@api_router.post("/guilds/{guild_id}/server-data/sync")
+async def trigger_server_sync(guild_id: str):
+    """Trigger a server data sync (called by bot)"""
+    # This endpoint is called by the bot when it syncs
+    # The actual sync happens in the bot
+    return {"message": "Sync wird vom Bot durchgeführt", "guild_id": guild_id}
+
+# ==================== LEVEL REWARDS API ====================
+
+class LevelRewardCreate(BaseModel):
+    level: int
+    reward_type: str  # "role" or "emoji"
+    reward_value: str
+    reward_name: Optional[str] = None
+
+@api_router.get("/guilds/{guild_id}/level-rewards")
+async def list_level_rewards(guild_id: str):
+    """List all level rewards"""
+    from database import get_level_rewards
+    rewards = await get_level_rewards(guild_id)
+    return {"rewards": rewards}
+
+@api_router.post("/guilds/{guild_id}/level-rewards")
+async def create_level_reward_api(guild_id: str, reward: LevelRewardCreate):
+    """Create a level reward"""
+    from database import create_level_reward
+    result = await create_level_reward(
+        guild_id=guild_id,
+        level=reward.level,
+        reward_type=reward.reward_type,
+        reward_value=reward.reward_value,
+        reward_name=reward.reward_name
+    )
+    return result
+
+@api_router.delete("/guilds/{guild_id}/level-rewards/{reward_id}")
+async def remove_level_reward(guild_id: str, reward_id: str):
+    """Delete a level reward"""
+    from database import delete_level_reward
+    deleted = await delete_level_reward(reward_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Reward not found")
+    return {"deleted": True}
+
+@api_router.put("/guilds/{guild_id}/level-rewards/{reward_id}/toggle")
+async def toggle_level_reward_api(guild_id: str, reward_id: str, enabled: bool = True):
+    """Toggle a level reward"""
+    from database import toggle_level_reward
+    await toggle_level_reward(reward_id, enabled)
+    return {"success": True, "enabled": enabled}
+
+# ==================== VOICE XP API ====================
+
+@api_router.get("/guilds/{guild_id}/voice-sessions")
+async def list_voice_sessions(guild_id: str):
+    """List active voice sessions"""
+    from database import get_active_voice_sessions
+    sessions = await get_active_voice_sessions(guild_id)
+    return {"sessions": sessions}
+
+@api_router.get("/guilds/{guild_id}/voice-stats")
+async def get_voice_stats(guild_id: str):
+    """Get voice XP statistics"""
+    # Get total voice time from ended sessions
+    pipeline = [
+        {"$match": {"guild_id": guild_id, "ended_at": {"$ne": None}}},
+        {"$group": {"_id": None, "total_sessions": {"$sum": 1}}}
+    ]
+    result = await db.voice_sessions.aggregate(pipeline).to_list(1)
+    total_sessions = result[0]["total_sessions"] if result else 0
+    
+    # Count active sessions
+    active_sessions = await db.voice_sessions.count_documents({"guild_id": guild_id, "ended_at": None})
+    
+    return {
+        "total_sessions": total_sessions,
+        "active_sessions": active_sessions
+    }
+
 # Include the router
 app.include_router(api_router)
 
