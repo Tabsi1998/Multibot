@@ -38,6 +38,7 @@ export default function Moderation() {
       fetchWarnings();
       fetchModLogs();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchConfig = async () => {

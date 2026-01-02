@@ -31,6 +31,7 @@ export default function CustomCommands() {
       fetchCommands();
       fetchConfig();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchCommands = async () => {

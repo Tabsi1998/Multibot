@@ -34,6 +34,7 @@ export default function News() {
       fetchNews();
       fetchConfig();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchNews = async () => {

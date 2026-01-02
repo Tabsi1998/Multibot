@@ -32,6 +32,7 @@ export default function Permissions() {
     if (guildId) {
       fetchPermissions();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchPermissions = async () => {

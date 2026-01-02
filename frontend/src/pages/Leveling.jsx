@@ -30,6 +30,7 @@ export default function Leveling() {
       fetchConfig();
       fetchLeaderboard();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchConfig = async () => {

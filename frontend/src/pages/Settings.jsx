@@ -29,6 +29,7 @@ export default function Settings() {
     if (guildId) {
       fetchConfig();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
   const fetchConfig = async () => {
