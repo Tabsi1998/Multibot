@@ -170,6 +170,7 @@ export default function Settings() {
                 value={openaiKey}
                 onChange={(e) => setOpenaiKey(e.target.value)}
                 className="bg-[#1E1F22] border-none text-white placeholder:text-gray-500 pr-10 font-mono"
+                disabled={!isAdmin}
                 data-testid="openai-key-input"
               />
               <button
