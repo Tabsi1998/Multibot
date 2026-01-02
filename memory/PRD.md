@@ -1,13 +1,7 @@
 # Discord MultiBot - Product Requirements Document (PRD)
 
 ## Original Problem Statement
-Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwickeln, der mehrere spezialisierte Bots wie MEE6, Dyno und TempVoice ersetzen kann.
-
-## User Persona
-- Discord Server Administrator
-- Sprache: Deutsch
-- Technische Kenntnisse: Fortgeschritten (kann Bot selbst hosten)
-- Ziel: Einen einzigen Bot für alle Server-Management-Funktionen
+Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwickeln, der mehrere spezialisierte Bots wie MEE6, Dyno, TempVoice und TicketTool ersetzen kann.
 
 ---
 
@@ -15,85 +9,108 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 
 ### 1. Authentication System
 - JWT-basierte Authentifizierung
-- Registrierung (erster Benutzer = automatisch Admin)
-- Login/Logout
-- Benutzerverwaltung im Dashboard
+- Erster Benutzer = automatisch Admin
+- Login/Logout, Benutzerverwaltung
 
 ### 2. Web Dashboard
-- React Frontend mit Discord-ähnlichem Design
+- React Frontend mit Discord-Design
 - Sidebar-Navigation mit allen Features
 - Server-Konfiguration
-- Bot-Status und Steuerung
 
-### 3. Discord Slash Commands (NEU - 02.01.2026)
-- `/help` - Übersicht aller Befehle
-- `/botinfo` - Bot-Informationen (Name, Server, Latenz)
-- `/serverinfo` - Server-Statistiken (Mitglieder, Kanäle, Rollen)
-- `/userinfo` - Benutzer-Info mit Level/XP
-- `/rank` - Zeigt Rang eines Benutzers
-- `/leaderboard` - Top 10 Rangliste
+### 3. Discord Slash Commands
+- `/help`, `/botinfo`, `/serverinfo`, `/userinfo`
+- `/rank`, `/leaderboard`
+- Moderation: `/warn`, `/kick`, `/ban`, `/mute`
 
-### 4. Server-Daten Synchronisation (NEU - 02.01.2026)
+### 4. Server-Daten Synchronisation
 - Bot synchronisiert Rollen, Kanäle, Kategorien, Emojis
-- Daten werden in MongoDB gecached
 - Web-Dashboard zeigt Dropdowns mit Suche
-- Auto-Sync bei Bot-Start und Änderungen
 
 ### 5. Moderation
-- `/warn`, `/kick`, `/ban`, `/mute` Befehle
-- Warn-System mit Speicherung
-- Log-Kanal Konfiguration
-- `/warnings`, `/clearwarns`
+- Alle Standard-Moderationsbefehle
+- Warn-System, Log-Kanal
 
-### 6. Temp Voice Channels (tempvoice.xyz Style)
-- Aktivierung/Deaktivierung
-- Creator Channel + Kategorie
-- Standard-Name, Limit, Bitrate
-- 7 Benutzer-Berechtigungen
-- `/vc rename`, `/vc limit`, `/vc lock`, etc.
+### 6. Temp Voice Channels (NEU ERWEITERT - 02.01.2026)
+**Mehrere Creator Channels:**
+- Pro Kategorie/Spiel eigenen Creator
+- z.B. "🎮 Valorant erstellen" → "Valorant #1"
+
+**Nummerierungsoptionen:**
+- Zahlen (1, 2, 3...)
+- Buchstaben (a, b, c...)
+- Hochgestellt (¹, ², ³...)
+- Tiefgestellt (₁, ₂, ₃...)
+- Römisch (i, ii, iii...)
+
+**Position:**
+- Oben (direkt unter Creator)
+- Unten (Ende der Kategorie)
+
+**Web-Dashboard:**
+- Mehrere Creator verwalten
+- Jeder mit eigenem Template
+- Aktivieren/Deaktivieren pro Creator
 
 ### 7. Reaction Roles
 - Button Reaction Roles
 - Emoji Reaction Roles
-- Web-Konfiguration mit Farbauswahl
-- Bis zu 10 Rollen pro Nachricht
+- Web-Konfiguration
 
 ### 8. Discord Spiele
 - TicTacToe, Stadt Land Fluss
-- Münzwurf, Würfeln
-- Schere Stein Papier, 8-Ball
-- Statistiken und Leaderboard
+- Münzwurf, Würfeln, RPS, 8-Ball
 
-### 9. Leveling System (ERWEITERT - 02.01.2026)
-- **Nachrichten XP:** XP pro Nachricht, Cooldown
-- **Voice XP (NEU):** XP pro Minute in Voice-Channels
-  - Mindest-Benutzer Einstellung
-  - AFK-Kanal ausschließen
-  - Voice-Zeit Tracking
-- **Level-Belohnungen (NEU):**
-  - Rollen bei bestimmten Leveln
-  - Emojis freischalten
-  - Aktivierbar/Deaktivierbar
-- Level-Up Benachrichtigungen
+### 9. Leveling System
+- Nachrichten XP
+- Voice XP (XP pro Minute)
+- Level-Belohnungen (Rollen & Emojis)
 
-### 10. Bot Aussehen Einstellungen (NEU - 02.01.2026)
-- Bot Status (Online, Abwesend, Bitte nicht stören, Unsichtbar)
-- Aktivitäts-Typ (Spielt, Schaut, Hört, Tritt an in)
-- Aktivitäts-Text (z.B. "mit /help starten")
-- Embed-Farbe für alle Bot-Nachrichten
+### 10. Ticket System (NEU - 02.01.2026)
+**Ticket-Panel:**
+- Embed mit Button erstellen
+- Titel, Beschreibung, Farbe konfigurierbar
+- Button Emoji und Text
 
-### 11. Welcome & Goodbye
+**Ticket-Kategorien:**
+- Dropdown beim Erstellen
+- z.B. "Support", "Bug Report", "Feature Request"
+
+**Benutzerdefinierte Felder:**
+- Text-Eingabe
+- Mehrzeilige Eingabe
+- Dropdown-Auswahl
+
+**Support-Team:**
+- Support-Rollen (können Tickets sehen & claimen)
+- Ping-Rollen (bei neuem Ticket)
+
+**Features:**
+- Claimen aktivieren/deaktivieren
+- Transcripts aktivieren/deaktivieren
+- Ticket-Kanal Name Template ({number}, {user})
+
+**Discord Befehle:**
+- `/ticket claim` - Ticket beanspruchen
+- `/ticket close` - Ticket schließen
+- `/ticket add @user` - Benutzer hinzufügen
+- `/ticket remove @user` - Benutzer entfernen
+- `/ticket rename` - Ticket umbenennen
+- `/ticket transcript` - Transcript erstellen
+
+### 11. Bot Aussehen
+- Status (Online, Abwesend, DND, Unsichtbar)
+- Aktivität (Spielt, Schaut, Hört, Tritt an in)
+- Embed-Farbe
+
+### 12. Welcome & Goodbye
 - Willkommensnachrichten
-- Abschiedsnachrichten
 - Auto-Rollen
 
-### 12. Custom Commands
+### 13. Custom Commands
 - Benutzerdefinierte Befehle
-- Variablen-Support
 
-### 13. News System
+### 14. News System
 - Automatische Ankündigungen
-- Zeitplanung
 
 ---
 
@@ -113,71 +130,55 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 ### Guild Configuration
 - GET /api/guilds/{guild_id}
 - PUT /api/guilds/{guild_id}
-- GET /api/guilds/{guild_id}/stats
 
-### Server Data (NEU)
+### Server Data
 - GET /api/guilds/{guild_id}/server-data
 - POST /api/guilds/{guild_id}/server-data/sync
+
+### Ticket System (NEU)
+- GET /api/guilds/{guild_id}/ticket-panels
+- POST /api/guilds/{guild_id}/ticket-panels
+- GET /api/guilds/{guild_id}/ticket-panels/{panel_id}
+- PUT /api/guilds/{guild_id}/ticket-panels/{panel_id}
+- DELETE /api/guilds/{guild_id}/ticket-panels/{panel_id}
+- GET /api/guilds/{guild_id}/tickets
+- GET /api/guilds/{guild_id}/tickets/stats
+- POST /api/guilds/{guild_id}/tickets/{ticket_id}/claim
+- POST /api/guilds/{guild_id}/tickets/{ticket_id}/close
+
+### Multi Temp Voice Creators (NEU)
+- GET /api/guilds/{guild_id}/temp-creators
+- POST /api/guilds/{guild_id}/temp-creators
+- GET /api/guilds/{guild_id}/temp-creators/{creator_id}
+- PUT /api/guilds/{guild_id}/temp-creators/{creator_id}
+- DELETE /api/guilds/{guild_id}/temp-creators/{creator_id}
 
 ### Temp Channels
 - GET /api/guilds/{guild_id}/temp-channels
 - DELETE /api/guilds/{guild_id}/temp-channels/{id}
 
 ### Reaction Roles
-- GET /api/guilds/{guild_id}/reaction-roles
-- POST /api/guilds/{guild_id}/reaction-roles
-- DELETE /api/guilds/{guild_id}/reaction-roles/{id}
+- GET/POST/DELETE /api/guilds/{guild_id}/reaction-roles
 
 ### Games
 - GET /api/guilds/{guild_id}/games
 - GET /api/guilds/{guild_id}/games/stats
 
-### Level Rewards (NEU)
-- GET /api/guilds/{guild_id}/level-rewards
-- POST /api/guilds/{guild_id}/level-rewards
-- DELETE /api/guilds/{guild_id}/level-rewards/{id}
-- PUT /api/guilds/{guild_id}/level-rewards/{id}/toggle
+### Level Rewards
+- GET/POST/DELETE /api/guilds/{guild_id}/level-rewards
 
-### Voice Stats (NEU)
+### Voice Stats
 - GET /api/guilds/{guild_id}/voice-stats
 - GET /api/guilds/{guild_id}/voice-sessions
 
 ---
 
-## Tech Stack
-- **Backend:** FastAPI (Python)
-- **Frontend:** React mit Shadcn/UI
-- **Database:** MongoDB
-- **Bot:** discord.py
-- **Auth:** JWT
-- **Deployment:** Self-hosted via install.sh
-
----
-
-## Frontend Komponenten
-
-### Seiten
-- Dashboard.jsx
-- TempChannels.jsx
-- ReactionRoles.jsx
-- Games.jsx
-- Leveling.jsx (erweitert mit Voice XP)
-- Settings.jsx (erweitert mit Bot Aussehen)
-- Moderation.jsx
-- Welcome.jsx
-- CustomCommands.jsx
-- News.jsx
-
-### Neue Komponenten
-- ServerDataSelector.jsx - Dropdown mit Suche für Rollen/Kanäle/Emojis
-
----
-
 ## Test Reports
-- /app/test_reports/iteration_1.json
-- /app/test_reports/iteration_2.json
-- /app/test_reports/iteration_3.json ✅ (14/14)
-- /app/test_reports/iteration_4.json ✅ (28/28 - 100% Backend + Frontend)
+- iteration_1.json ✅
+- iteration_2.json ✅
+- iteration_3.json ✅ (14/14)
+- iteration_4.json ✅ (28/28)
+- iteration_5.json ✅ (25/25 - Ticket System & Multi Temp Creators)
 
 ## Test Credentials
 - Email: admin@test.de
@@ -189,18 +190,17 @@ Der Benutzer möchte einen "ultimativen" All-in-One Discord Bot in Deutsch entwi
 ## Backlog / Future Tasks
 
 ### P0 (Nächste Priorität)
-- [ ] Bot auf echtem Discord Server testen
-- [ ] Server-Daten Sync verifizieren wenn Bot läuft
+- [ ] Discord Bot Slash Commands für Tickets implementieren
+- [ ] Discord Bot Logic für Multi Temp Creators implementieren
+- [ ] Bot live testen
 
 ### P1
-- [ ] Mehr Spiele hinzufügen (Hangman, Quiz)
+- [ ] Mehr Spiele
 - [ ] KI-Chat Integration
-- [ ] Ticket-System
 
 ### P2
 - [ ] Multi-Language Support
 - [ ] Backup/Restore
-- [ ] Audit-Log
 
 ---
 
