@@ -358,21 +358,118 @@ class StadtLandFlussModal(ui.Modal):
 
 # ==================== BOT EVENTS ====================
 
+async def sync_guild_data(guild):
+    """Sync all guild data to database for web dashboard"""
+    from database import sync_server_data
+    
+    # Collect roles
+    roles = []
+    for role in guild.roles:
+        if role.name != "@everyone":
+            roles.append({
+                "id": str(role.id),
+                "name": role.name,
+                "color": str(role.color),
+                "position": role.position,
+                "mentionable": role.mentionable,
+                "managed": role.managed
+            })
+    
+    # Collect channels
+    channels = []
+    for channel in guild.channels:
+        channel_type = "text" if isinstance(channel, discord.TextChannel) else \
+                       "voice" if isinstance(channel, discord.VoiceChannel) else \
+                       "category" if isinstance(channel, discord.CategoryChannel) else "other"
+        channels.append({
+            "id": str(channel.id),
+            "name": channel.name,
+            "type": channel_type,
+            "category_id": str(channel.category_id) if channel.category_id else None,
+            "position": channel.position
+        })
+    
+    # Collect categories
+    categories = []
+    for category in guild.categories:
+        categories.append({
+            "id": str(category.id),
+            "name": category.name,
+            "position": category.position
+        })
+    
+    # Collect emojis
+    emojis = []
+    for emoji in guild.emojis:
+        emojis.append({
+            "id": str(emoji.id),
+            "name": emoji.name,
+            "animated": emoji.animated,
+            "url": str(emoji.url)
+        })
+    
+    await sync_server_data(str(guild.id), roles, channels, categories, emojis)
+    logger.info(f'Synced data for guild: {guild.name} ({len(roles)} roles, {len(channels)} channels, {len(emojis)} emojis)')
+
 @bot.event
 async def on_ready():
     logger.info(f'{bot.user} ist online!')
+    
+    # Set bot status from config (using first guild or default)
+    try:
+        activity = discord.Game(name="/help für Befehle")
+        await bot.change_presence(status=discord.Status.online, activity=activity)
+    except Exception as e:
+        logger.error(f'Error setting status: {e}')
+    
+    # Sync slash commands
     try:
         synced = await bot.tree.sync()
         logger.info(f'Synced {len(synced)} slash commands')
     except Exception as e:
         logger.error(f'Error syncing commands: {e}')
     
+    # Sync all guild data
+    for guild in bot.guilds:
+        try:
+            await sync_guild_data(guild)
+        except Exception as e:
+            logger.error(f'Error syncing guild {guild.name}: {e}')
+    
+    # Start background tasks
     check_scheduled_news.start()
+    voice_xp_task.start()
 
 @bot.event
 async def on_guild_join(guild):
     await get_guild_config(str(guild.id))
+    await sync_guild_data(guild)
     logger.info(f'Joined guild: {guild.name}')
+
+@bot.event
+async def on_guild_update(before, after):
+    """Re-sync when guild is updated"""
+    await sync_guild_data(after)
+
+@bot.event
+async def on_guild_channel_create(channel):
+    """Re-sync when channel is created"""
+    await sync_guild_data(channel.guild)
+
+@bot.event
+async def on_guild_channel_delete(channel):
+    """Re-sync when channel is deleted"""
+    await sync_guild_data(channel.guild)
+
+@bot.event
+async def on_guild_role_create(role):
+    """Re-sync when role is created"""
+    await sync_guild_data(role.guild)
+
+@bot.event
+async def on_guild_role_delete(role):
+    """Re-sync when role is deleted"""
+    await sync_guild_data(role.guild)
 
 @bot.event
 async def on_member_join(member):
