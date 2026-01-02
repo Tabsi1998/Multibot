@@ -93,8 +93,21 @@ export default function Settings() {
     setLoading(false);
   };
 
+  // Check if user is admin
+  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const isAdmin = currentUser.is_admin;
+
   return (
     <div className="space-y-6 max-w-3xl animate-fade-in">
+      {/* Admin Warning */}
+      {!isAdmin && (
+        <div className="p-4 rounded-lg bg-[#F0B232]/10 border border-[#F0B232]/20">
+          <p className="text-[#F0B232] text-sm">
+            ⚠️ Nur Administratoren können Bot-Tokens konfigurieren. Du kannst aber die Server-Einstellungen ändern.
+          </p>
+        </div>
+      )}
+
       {/* Bot Tokens */}
       <Card className="bg-[#2B2D31] border-[#1E1F22]">
         <CardHeader>
@@ -103,7 +116,7 @@ export default function Settings() {
             Bot Konfiguration
           </CardTitle>
           <CardDescription className="text-gray-400">
-            Konfiguriere die API-Schlüssel für deinen Bot
+            Konfiguriere die API-Schlüssel für deinen Bot (nur für Admins)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -120,6 +133,7 @@ export default function Settings() {
                 value={discordToken}
                 onChange={(e) => setDiscordToken(e.target.value)}
                 className="bg-[#1E1F22] border-none text-white placeholder:text-gray-500 pr-10 font-mono"
+                disabled={!isAdmin}
                 data-testid="discord-token-input"
               />
               <button
