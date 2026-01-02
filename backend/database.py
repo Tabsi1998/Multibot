@@ -279,7 +279,7 @@ async def get_mod_logs(guild_id: str, limit: int = 50) -> list:
 
 # ==================== TEMP CHANNELS ====================
 
-async def create_temp_channel(guild_id: str, channel_id: str, owner_id: str, name: str) -> dict:
+async def create_temp_channel(guild_id: str, channel_id: str, owner_id: str, name: str, creator_id: str = None) -> dict:
     """Create a temp channel record"""
     from datetime import datetime, timezone
     channel = {
@@ -287,6 +287,7 @@ async def create_temp_channel(guild_id: str, channel_id: str, owner_id: str, nam
         "channel_id": channel_id,
         "owner_id": owner_id,
         "name": name,
+        "creator_id": creator_id,  # Link to the creator that spawned this channel
         "user_limit": 0,
         "bitrate": 64000,
         "locked": False,
