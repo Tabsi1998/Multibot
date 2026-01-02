@@ -182,6 +182,8 @@ MONGO_URL="mongodb://localhost:27017"
 DB_NAME="multibot"
 CORS_ORIGINS="*"
 JWT_SECRET="$(openssl rand -hex 32)"
+HOST="0.0.0.0"
+PORT="8001"
 EOF
     fi
     
