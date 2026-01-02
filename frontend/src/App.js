@@ -9,6 +9,7 @@ import Permissions from "@/pages/Permissions";
 import TempChannels from "@/pages/TempChannels";
 import ReactionRoles from "@/pages/ReactionRoles";
 import Games from "@/pages/Games";
+import Tickets from "@/pages/Tickets";
 import Leveling from "@/pages/Leveling";
 import Welcome from "@/pages/Welcome";
 import CustomCommands from "@/pages/CustomCommands";
