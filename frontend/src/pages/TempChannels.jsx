@@ -169,6 +169,10 @@ export default function TempChannels() {
     });
   };
 
+  const openEditCreator = (creator) => {
+    setEditCreator({ ...creator });
+  };
+
   const permissionOptions = [
     { key: "allow_rename", label: "Umbenennen", icon: Hash },
     { key: "allow_limit", label: "Limit setzen", icon: Users },
