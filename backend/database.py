@@ -45,6 +45,11 @@ DEFAULT_GUILD_CONFIG = {
     "level_up_channel": None,
     "level_roles": {},
     "ignored_channels": [],
+    # Voice XP
+    "voice_xp_enabled": False,
+    "voice_xp_per_minute": 5,
+    "voice_xp_min_users": 2,
+    "voice_afk_channel": None,
     # Temp Channels - EXPANDED
     "temp_channels_enabled": False,
     "temp_channel_category": None,
