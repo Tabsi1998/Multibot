@@ -25,6 +25,12 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const guildId = localStorage.getItem("guildId");
 
+  // Get auth header
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
   useEffect(() => {
     if (guildId) {
       fetchConfig();
@@ -34,7 +40,9 @@ export default function Settings() {
 
   const fetchConfig = async () => {
     try {
-      const res = await axios.get(`${API}/guilds/${guildId}`);
+      const res = await axios.get(`${API}/guilds/${guildId}`, {
+        headers: getAuthHeader(),
+      });
       setConfig(res.data);
     } catch (e) {
       console.error(e);
@@ -47,12 +55,20 @@ export default function Settings() {
       await axios.post(`${API}/bot/configure`, {
         discord_token: discordToken || undefined,
         openai_api_key: openaiKey || undefined,
+      }, {
+        headers: getAuthHeader(),
       });
       toast.success("Tokens gespeichert! Bitte starte den Bot neu.");
       setDiscordToken("");
       setOpenaiKey("");
     } catch (e) {
-      toast.error("Fehler beim Speichern");
+      if (e.response?.status === 401) {
+        toast.error("Nicht autorisiert. Bitte melde dich erneut an.");
+      } else if (e.response?.status === 403) {
+        toast.error("Nur Administratoren können Tokens konfigurieren.");
+      } else {
+        toast.error(e.response?.data?.detail || "Fehler beim Speichern");
+      }
     }
     setLoading(false);
   };
