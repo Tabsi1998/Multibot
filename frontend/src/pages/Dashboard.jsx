@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [botLogs, setBotLogs] = useState({ logs: "", errors: "" });
   const [showLogs, setShowLogs] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   useEffect(() => {
     fetchBotStatus();
