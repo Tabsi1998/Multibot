@@ -13,47 +13,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Mic,
+  Plus,
+  Trash2,
+  RefreshCw,
   Settings,
   Users,
   Lock,
-  Unlock,
-  Eye,
   EyeOff,
-  Crown,
-  Hash,
-  Save,
-  RefreshCw,
-  Trash2,
-  Plus,
-  Volume2,
-  UserPlus,
   UserMinus,
+  UserPlus,
+  Volume2,
+  Hash,
   Shield,
+  ArrowUp,
+  ArrowDown,
+  Crown,
+  Edit,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { VoiceChannelSelector, CategorySelector } from "@/components/ServerDataSelector";
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export default function TempChannels() {
-  const [config, setConfig] = useState({
-    temp_channels_enabled: false,
-    temp_channel_category: "",
-    temp_channel_creator: "",
-    temp_channel_default_name: "🔊 {user}'s Kanal",
-    temp_channel_default_limit: 0,
-    temp_channel_default_bitrate: 64000,
-    temp_channel_allow_rename: true,
-    temp_channel_allow_limit: true,
-    temp_channel_allow_lock: true,
-    temp_channel_allow_hide: true,
-    temp_channel_allow_kick: true,
-    temp_channel_allow_permit: true,
-    temp_channel_allow_bitrate: true,
-  });
+  const [creators, setCreators] = useState([]);
   const [activeChannels, setActiveChannels] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editCreator, setEditCreator] = useState(null);
+  const [newCreator, setNewCreator] = useState({
+    channel_id: "",
+    category_id: "",
+    name_template: "🔊 {user}'s Kanal",
+    numbering_type: "number",
+    position: "bottom",
+    default_limit: 0,
+    default_bitrate: 64000,
+    allow_rename: true,
+    allow_limit: true,
+    allow_lock: true,
+    allow_hide: true,
+    allow_kick: true,
+    allow_permit: true,
+    allow_bitrate: true,
+  });
   const guildId = localStorage.getItem("guildId");
 
   const getAuthHeader = () => {
@@ -61,12 +75,10 @@ export default function TempChannels() {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const fetchConfig = async () => {
+  const fetchCreators = async () => {
     try {
-      const res = await axios.get(`${API}/guilds/${guildId}`, {
-        headers: getAuthHeader(),
-      });
-      setConfig((prev) => ({ ...prev, ...res.data }));
+      const res = await axios.get(`${API}/guilds/${guildId}/temp-creators`, { headers: getAuthHeader() });
+      setCreators(res.data.creators || []);
     } catch (e) {
       console.error(e);
     }
@@ -74,9 +86,7 @@ export default function TempChannels() {
 
   const fetchActiveChannels = async () => {
     try {
-      const res = await axios.get(`${API}/guilds/${guildId}/temp-channels`, {
-        headers: getAuthHeader(),
-      });
+      const res = await axios.get(`${API}/guilds/${guildId}/temp-channels`, { headers: getAuthHeader() });
       setActiveChannels(res.data.channels || []);
     } catch (e) {
       console.error(e);
@@ -85,34 +95,53 @@ export default function TempChannels() {
 
   useEffect(() => {
     if (guildId) {
-      fetchConfig();
+      fetchCreators();
       fetchActiveChannels();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId]);
 
-  const saveConfig = async () => {
-    if (!guildId) {
-      toast.error("Bitte wähle zuerst einen Server im Dashboard");
+  const createCreator = async () => {
+    if (!newCreator.channel_id) {
+      toast.error("Bitte wähle einen Creator-Kanal aus");
       return;
     }
     setLoading(true);
     try {
-      await axios.put(`${API}/guilds/${guildId}`, config, {
-        headers: getAuthHeader(),
-      });
-      toast.success("Temp-Channel Einstellungen gespeichert!");
+      await axios.post(`${API}/guilds/${guildId}/temp-creators`, newCreator, { headers: getAuthHeader() });
+      toast.success("Temp Voice Creator erstellt!");
+      setCreateOpen(false);
+      resetNewCreator();
+      fetchCreators();
     } catch (e) {
-      toast.error("Fehler beim Speichern");
+      toast.error("Fehler beim Erstellen");
     }
     setLoading(false);
   };
 
+  const updateCreator = async (creatorId, updates) => {
+    try {
+      await axios.put(`${API}/guilds/${guildId}/temp-creators/${creatorId}`, updates, { headers: getAuthHeader() });
+      toast.success("Creator aktualisiert!");
+      fetchCreators();
+    } catch (e) {
+      toast.error("Fehler beim Aktualisieren");
+    }
+  };
+
+  const deleteCreator = async (creatorId) => {
+    try {
+      await axios.delete(`${API}/guilds/${guildId}/temp-creators/${creatorId}`, { headers: getAuthHeader() });
+      toast.success("Creator gelöscht");
+      fetchCreators();
+    } catch (e) {
+      toast.error("Fehler beim Löschen");
+    }
+  };
+
   const deleteChannel = async (channelId) => {
     try {
-      await axios.delete(`${API}/guilds/${guildId}/temp-channels/${channelId}`, {
-        headers: getAuthHeader(),
-      });
+      await axios.delete(`${API}/guilds/${guildId}/temp-channels/${channelId}`, { headers: getAuthHeader() });
       toast.success("Kanal gelöscht");
       fetchActiveChannels();
     } catch (e) {
@@ -120,15 +149,42 @@ export default function TempChannels() {
     }
   };
 
+  const resetNewCreator = () => {
+    setNewCreator({
+      channel_id: "",
+      category_id: "",
+      name_template: "🔊 {user}'s Kanal",
+      numbering_type: "number",
+      position: "bottom",
+      default_limit: 0,
+      default_bitrate: 64000,
+      allow_rename: true,
+      allow_limit: true,
+      allow_lock: true,
+      allow_hide: true,
+      allow_kick: true,
+      allow_permit: true,
+      allow_bitrate: true,
+    });
+  };
+
   const permissionOptions = [
-    { key: "temp_channel_allow_rename", label: "Umbenennen", icon: Hash, desc: "Benutzer können ihren Kanal umbenennen" },
-    { key: "temp_channel_allow_limit", label: "Limit setzen", icon: Users, desc: "Benutzer können das Userlimit ändern" },
-    { key: "temp_channel_allow_lock", label: "Sperren", icon: Lock, desc: "Benutzer können ihren Kanal sperren" },
-    { key: "temp_channel_allow_hide", label: "Verstecken", icon: EyeOff, desc: "Benutzer können ihren Kanal verstecken" },
-    { key: "temp_channel_allow_kick", label: "Kicken", icon: UserMinus, desc: "Benutzer können andere aus dem Kanal werfen" },
-    { key: "temp_channel_allow_permit", label: "Erlauben", icon: UserPlus, desc: "Benutzer können andere in gesperrte Kanäle einladen" },
-    { key: "temp_channel_allow_bitrate", label: "Bitrate", icon: Volume2, desc: "Benutzer können die Audioqualität ändern" },
+    { key: "allow_rename", label: "Umbenennen", icon: Hash },
+    { key: "allow_limit", label: "Limit setzen", icon: Users },
+    { key: "allow_lock", label: "Sperren", icon: Lock },
+    { key: "allow_hide", label: "Verstecken", icon: EyeOff },
+    { key: "allow_kick", label: "Kicken", icon: UserMinus },
+    { key: "allow_permit", label: "Erlauben", icon: UserPlus },
+    { key: "allow_bitrate", label: "Bitrate", icon: Volume2 },
   ];
+
+  const numberingExamples = {
+    number: ["1", "2", "3", "10"],
+    letter: ["a", "b", "c", "z"],
+    superscript: ["¹", "²", "³", "¹⁰"],
+    subscript: ["₁", "₂", "₃", "₁₀"],
+    roman: ["i", "ii", "iii", "x"],
+  };
 
   if (!guildId) {
     return (
@@ -153,134 +209,154 @@ export default function TempChannels() {
             Temp Voice Channels
           </h1>
           <p className="text-gray-400 mt-1">
-            Erstelle automatisch temporäre Sprachkanäle für deine Mitglieder
+            Erstelle mehrere Creator-Channels für verschiedene Bereiche
           </p>
         </div>
-        <Button
-          onClick={saveConfig}
-          disabled={loading}
-          className="bg-[#5865F2] hover:bg-[#4752C4] text-white"
-          data-testid="save-temp-config-btn"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Speichern
-        </Button>
-      </div>
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-[#5865F2] hover:bg-[#4752C4] text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Neuer Creator
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#2B2D31] border-[#1E1F22] text-white max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="font-[Outfit]">Neuen Temp Voice Creator erstellen</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                Benutzer die diesem Kanal beitreten, erhalten automatisch einen eigenen
+              </DialogDescription>
+            </DialogHeader>
 
-      {/* Main Toggle */}
-      <Card className="bg-[#2B2D31] border-[#1E1F22]">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-lg ${config.temp_channels_enabled ? "bg-[#23A559]/20" : "bg-gray-500/20"}`}>
-                <Mic className={`h-6 w-6 ${config.temp_channels_enabled ? "text-[#23A559]" : "text-gray-500"}`} />
-              </div>
-              <div>
-                <p className="text-white font-medium">Temp Channels aktivieren</p>
-                <p className="text-sm text-gray-400">
-                  Benutzer können eigene Sprachkanäle erstellen
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={config.temp_channels_enabled}
-              onCheckedChange={(v) => setConfig({ ...config, temp_channels_enabled: v })}
-              data-testid="temp-channels-toggle"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {config.temp_channels_enabled && (
-        <>
-          {/* Setup Section */}
-          <Card className="bg-[#2B2D31] border-[#1E1F22]">
-            <CardHeader>
-              <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
-                <Settings className="h-5 w-5 text-[#EB459E]" />
-                Grundeinstellungen
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Konfiguriere wie Temp-Channels erstellt werden
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Creator Channel */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6 py-4">
+              {/* Basic Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Creator Channel ID</Label>
-                  <Input
-                    placeholder="Voice Channel ID eingeben"
-                    value={config.temp_channel_creator || ""}
-                    onChange={(e) => setConfig({ ...config, temp_channel_creator: e.target.value })}
-                    className="bg-[#1E1F22] border-none text-white font-mono"
-                    data-testid="creator-channel-input"
+                  <Label className="text-gray-300">Creator-Channel *</Label>
+                  <VoiceChannelSelector
+                    value={newCreator.channel_id}
+                    onChange={(v) => setNewCreator({ ...newCreator, channel_id: v })}
+                    placeholder="Voice-Kanal auswählen"
+                    guildId={guildId}
                   />
                   <p className="text-xs text-gray-500">
-                    Benutzer die diesem Kanal beitreten, erhalten automatisch einen eigenen
+                    z.B. "🎮 Valorant erstellen"
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-gray-300">Kategorie ID</Label>
-                  <Input
-                    placeholder="Kategorie ID für neue Kanäle"
-                    value={config.temp_channel_category || ""}
-                    onChange={(e) => setConfig({ ...config, temp_channel_category: e.target.value })}
-                    className="bg-[#1E1F22] border-none text-white font-mono"
-                    data-testid="category-input"
+                  <Label className="text-gray-300">Ziel-Kategorie</Label>
+                  <CategorySelector
+                    value={newCreator.category_id}
+                    onChange={(v) => setNewCreator({ ...newCreator, category_id: v })}
+                    placeholder="Kategorie auswählen"
+                    guildId={guildId}
                   />
-                  <p className="text-xs text-gray-500">
-                    Neue Kanäle werden in dieser Kategorie erstellt
-                  </p>
                 </div>
               </div>
 
-              {/* Default Name */}
+              {/* Name Template */}
               <div className="space-y-2">
-                <Label className="text-gray-300">Standard Kanal-Name</Label>
+                <Label className="text-gray-300">Kanal-Name Template</Label>
                 <Input
-                  placeholder="🔊 {user}'s Kanal"
-                  value={config.temp_channel_default_name || ""}
-                  onChange={(e) => setConfig({ ...config, temp_channel_default_name: e.target.value })}
+                  value={newCreator.name_template}
+                  onChange={(e) => setNewCreator({ ...newCreator, name_template: e.target.value })}
                   className="bg-[#1E1F22] border-none text-white"
-                  data-testid="default-name-input"
+                  placeholder="🔊 {user}'s Kanal"
                 />
                 <p className="text-xs text-gray-500">
-                  Verfügbare Variablen: {"{user}"} = Benutzername
+                  Variablen: {"{user}"} = Benutzername, {"{number}"} = Nummer, {"{game}"} = Spielname
                 </p>
               </div>
 
-              {/* Defaults */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <Label className="text-gray-300">Standard Benutzerlimit</Label>
-                  <div className="flex items-center gap-4">
-                    <Slider
-                      value={[config.temp_channel_default_limit || 0]}
-                      onValueChange={([v]) => setConfig({ ...config, temp_channel_default_limit: v })}
-                      max={99}
-                      step={1}
-                      className="flex-1"
-                    />
-                    <span className="text-white font-mono w-12 text-right">
-                      {config.temp_channel_default_limit || 0}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500">0 = Unbegrenzt</p>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-gray-300">Standard Bitrate (kbps)</Label>
+              {/* Numbering & Position */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Nummerierung</Label>
                   <Select
-                    value={String(config.temp_channel_default_bitrate || 64000)}
-                    onValueChange={(v) => setConfig({ ...config, temp_channel_default_bitrate: parseInt(v) })}
+                    value={newCreator.numbering_type}
+                    onValueChange={(v) => setNewCreator({ ...newCreator, numbering_type: v })}
                   >
                     <SelectTrigger className="bg-[#1E1F22] border-none text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-[#1E1F22] border-[#404249]">
-                      <SelectItem value="8000" className="text-white">8 kbps</SelectItem>
+                      <SelectItem value="number" className="text-white">
+                        Zahlen (1, 2, 3...)
+                      </SelectItem>
+                      <SelectItem value="letter" className="text-white">
+                        Buchstaben (a, b, c...)
+                      </SelectItem>
+                      <SelectItem value="superscript" className="text-white">
+                        Hochgestellt (¹, ², ³...)
+                      </SelectItem>
+                      <SelectItem value="subscript" className="text-white">
+                        Tiefgestellt (₁, ₂, ₃...)
+                      </SelectItem>
+                      <SelectItem value="roman" className="text-white">
+                        Römisch (i, ii, iii...)
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500">
+                    Beispiel: {numberingExamples[newCreator.numbering_type]?.join(", ")}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Position</Label>
+                  <Select
+                    value={newCreator.position}
+                    onValueChange={(v) => setNewCreator({ ...newCreator, position: v })}
+                  >
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                      <SelectItem value="top" className="text-white">
+                        <div className="flex items-center gap-2">
+                          <ArrowUp className="h-4 w-4" />
+                          Oben (unter Creator)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="bottom" className="text-white">
+                        <div className="flex items-center gap-2">
+                          <ArrowDown className="h-4 w-4" />
+                          Unten (Ende der Kategorie)
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Defaults */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <Label className="text-gray-300">Standard Benutzerlimit</Label>
+                  <div className="flex items-center gap-4">
+                    <Slider
+                      value={[newCreator.default_limit]}
+                      onValueChange={([v]) => setNewCreator({ ...newCreator, default_limit: v })}
+                      max={99}
+                      step={1}
+                      className="flex-1"
+                    />
+                    <span className="text-white font-mono w-12 text-right">
+                      {newCreator.default_limit || "∞"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label className="text-gray-300">Standard Bitrate</Label>
+                  <Select
+                    value={String(newCreator.default_bitrate)}
+                    onValueChange={(v) => setNewCreator({ ...newCreator, default_bitrate: parseInt(v) })}
+                  >
+                    <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1E1F22] border-[#404249]">
                       <SelectItem value="32000" className="text-white">32 kbps</SelectItem>
                       <SelectItem value="64000" className="text-white">64 kbps</SelectItem>
                       <SelectItem value="96000" className="text-white">96 kbps</SelectItem>
@@ -291,110 +367,114 @@ export default function TempChannels() {
                   </Select>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Permissions */}
-          <Card className="bg-[#2B2D31] border-[#1E1F22]">
-            <CardHeader>
-              <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[#F0B232]" />
-                Benutzer-Berechtigungen
-              </CardTitle>
-              <CardDescription className="text-gray-400">
-                Was dürfen Kanal-Besitzer mit ihrem Temp-Channel machen?
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {permissionOptions.map((perm) => {
-                  const Icon = perm.icon;
-                  return (
-                    <div
-                      key={perm.key}
-                      className="flex items-center justify-between p-4 rounded-lg bg-[#1E1F22] hover:bg-[#1E1F22]/80 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${config[perm.key] ? "bg-[#23A559]/20" : "bg-gray-500/20"}`}>
-                          <Icon className={`h-4 w-4 ${config[perm.key] ? "text-[#23A559]" : "text-gray-500"}`} />
+              {/* Permissions */}
+              <div className="space-y-4 border-t border-[#404249] pt-4">
+                <h3 className="text-white font-medium flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Benutzer-Berechtigungen
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {permissionOptions.map((perm) => {
+                    const Icon = perm.icon;
+                    return (
+                      <div
+                        key={perm.key}
+                        className="flex items-center justify-between p-3 rounded-lg bg-[#1E1F22]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-white">{perm.label}</span>
                         </div>
-                        <div>
-                          <p className="text-white text-sm font-medium">{perm.label}</p>
-                          <p className="text-xs text-gray-500">{perm.desc}</p>
-                        </div>
+                        <Switch
+                          checked={newCreator[perm.key]}
+                          onCheckedChange={(v) => setNewCreator({ ...newCreator, [perm.key]: v })}
+                        />
                       </div>
-                      <Switch
-                        checked={config[perm.key] ?? true}
-                        onCheckedChange={(v) => setConfig({ ...config, [perm.key]: v })}
-                      />
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Active Channels */}
-          <Card className="bg-[#2B2D31] border-[#1E1F22]">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
-                  <Mic className="h-5 w-5 text-[#5865F2]" />
-                  Aktive Temp-Channels ({activeChannels.length})
-                </CardTitle>
-                <CardDescription className="text-gray-400">
-                  Alle aktuell existierenden temporären Sprachkanäle
-                </CardDescription>
-              </div>
-              <Button
-                onClick={fetchActiveChannels}
-                variant="ghost"
-                size="icon"
-                className="text-gray-400 hover:text-white"
-              >
-                <RefreshCw className="h-4 w-4" />
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreateOpen(false)} className="text-gray-400">
+                Abbrechen
               </Button>
-            </CardHeader>
-            <CardContent>
-              {activeChannels.length > 0 ? (
-                <div className="space-y-3">
-                  {activeChannels.map((channel) => (
-                    <div
-                      key={channel.channel_id}
-                      className="flex items-center justify-between p-4 rounded-lg bg-[#1E1F22]"
-                    >
-                      <div className="flex items-center gap-4">
+              <Button onClick={createCreator} disabled={loading} className="bg-[#5865F2] hover:bg-[#4752C4] text-white">
+                Erstellen
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Creators List */}
+      <Card className="bg-[#2B2D31] border-[#1E1F22]">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
+              <Settings className="h-5 w-5 text-[#EB459E]" />
+              Temp Voice Creators ({creators.length})
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Jeder Creator erstellt automatisch Temp-Channels
+            </CardDescription>
+          </div>
+          <Button onClick={fetchCreators} variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {creators.length > 0 ? (
+            <div className="space-y-4">
+              {creators.map((creator) => (
+                <div
+                  key={creator.id}
+                  className="p-4 rounded-lg bg-[#1E1F22] border-l-4 border-[#5865F2]"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-[#5865F2]/20">
                           <Mic className="h-5 w-5 text-[#5865F2]" />
                         </div>
                         <div>
-                          <p className="text-white font-medium">{channel.name}</p>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Crown className="h-3 w-3" />
-                              {channel.owner_id}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Users className="h-3 w-3" />
-                              {channel.user_limit || "∞"}
-                            </span>
-                            {channel.locked && (
-                              <span className="flex items-center gap-1 text-[#F0B232]">
-                                <Lock className="h-3 w-3" />
-                                Gesperrt
-                              </span>
-                            )}
-                            {channel.hidden && (
-                              <span className="flex items-center gap-1 text-[#EB459E]">
-                                <EyeOff className="h-3 w-3" />
-                                Versteckt
-                              </span>
-                            )}
-                          </div>
+                          <p className="text-white font-medium">{creator.name_template}</p>
+                          <p className="text-sm text-gray-400">Creator: {creator.channel_id?.slice(0, 12)}...</p>
                         </div>
                       </div>
+                      
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+                        <span className="px-2 py-1 rounded bg-[#2B2D31] text-gray-300">
+                          {creator.numbering_type === "number" ? "1, 2, 3" :
+                           creator.numbering_type === "letter" ? "a, b, c" :
+                           creator.numbering_type === "superscript" ? "¹, ², ³" :
+                           creator.numbering_type === "subscript" ? "₁, ₂, ₃" :
+                           "i, ii, iii"}
+                        </span>
+                        <span className="px-2 py-1 rounded bg-[#2B2D31] text-gray-300 flex items-center gap-1">
+                          {creator.position === "top" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                          {creator.position === "top" ? "Oben" : "Unten"}
+                        </span>
+                        <span className="px-2 py-1 rounded bg-[#2B2D31] text-gray-300">
+                          Limit: {creator.default_limit || "∞"}
+                        </span>
+                        <span className="px-2 py-1 rounded bg-[#2B2D31] text-gray-300">
+                          {creator.default_bitrate / 1000} kbps
+                        </span>
+                        <span className="px-2 py-1 rounded bg-[#2B2D31] text-gray-300">
+                          {creator.channel_counter || 0} erstellt
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={creator.enabled}
+                        onCheckedChange={(v) => updateCreator(creator.id, { enabled: v })}
+                      />
                       <Button
-                        onClick={() => deleteChannel(channel.channel_id)}
+                        onClick={() => deleteCreator(creator.id)}
                         variant="ghost"
                         size="icon"
                         className="text-[#DA373C] hover:text-[#DA373C] hover:bg-[#DA373C]/10"
@@ -402,49 +482,111 @@ export default function TempChannels() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Mic className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                  <p className="text-gray-500">Keine aktiven Temp-Channels</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Kanäle erscheinen hier sobald sie erstellt werden
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Commands Info */}
-          <Card className="bg-[#2B2D31] border-[#1E1F22]">
-            <CardHeader>
-              <CardTitle className="text-white font-[Outfit]">Discord Befehle</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[
-                  { cmd: "/vc rename", desc: "Kanal umbenennen" },
-                  { cmd: "/vc limit", desc: "Benutzerlimit setzen" },
-                  { cmd: "/vc lock", desc: "Kanal sperren" },
-                  { cmd: "/vc unlock", desc: "Kanal entsperren" },
-                  { cmd: "/vc kick", desc: "Benutzer kicken" },
-                  { cmd: "/vc permit", desc: "Benutzer erlauben" },
-                  { cmd: "/vc claim", desc: "Verlassenen Kanal übernehmen" },
-                ].map((item) => (
-                  <div
-                    key={item.cmd}
-                    className="p-3 rounded-lg bg-[#1E1F22] flex items-center gap-3"
-                  >
-                    <code className="text-[#5865F2] text-sm font-mono">{item.cmd}</code>
-                    <span className="text-gray-400 text-sm">{item.desc}</span>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Mic className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400 text-lg">Keine Temp Voice Creators</p>
+              <p className="text-gray-500 text-sm mt-1">
+                Erstelle deinen ersten Creator mit dem Button oben
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Active Channels */}
+      <Card className="bg-[#2B2D31] border-[#1E1F22]">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
+              <Mic className="h-5 w-5 text-[#23A559]" />
+              Aktive Temp-Channels ({activeChannels.length})
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              Alle aktuell existierenden temporären Sprachkanäle
+            </CardDescription>
+          </div>
+          <Button onClick={fetchActiveChannels} variant="ghost" size="icon" className="text-gray-400 hover:text-white">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {activeChannels.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {activeChannels.map((channel) => (
+                <div
+                  key={channel.channel_id}
+                  className="p-3 rounded-lg bg-[#1E1F22] flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-[#23A559]/20">
+                      <Mic className="h-4 w-4 text-[#23A559]" />
+                    </div>
+                    <div>
+                      <p className="text-white text-sm font-medium truncate max-w-[150px]">{channel.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <Crown className="h-3 w-3" />
+                          {channel.owner_id?.slice(0, 6)}...
+                        </span>
+                        {channel.locked && <Lock className="h-3 w-3 text-[#F0B232]" />}
+                        {channel.hidden && <EyeOff className="h-3 w-3 text-[#EB459E]" />}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => deleteChannel(channel.channel_id)}
+                    variant="ghost"
+                    size="icon"
+                    className="text-[#DA373C] hover:text-[#DA373C] h-8 w-8"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Mic className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-500">Keine aktiven Temp-Channels</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Commands */}
+      <Card className="bg-[#2B2D31] border-[#1E1F22]">
+        <CardHeader>
+          <CardTitle className="text-white font-[Outfit]">Discord Befehle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[
+              { cmd: "/vc rename", desc: "Kanal umbenennen" },
+              { cmd: "/vc limit", desc: "Benutzerlimit setzen" },
+              { cmd: "/vc lock", desc: "Kanal sperren" },
+              { cmd: "/vc unlock", desc: "Kanal entsperren" },
+              { cmd: "/vc hide", desc: "Kanal verstecken" },
+              { cmd: "/vc show", desc: "Kanal sichtbar machen" },
+              { cmd: "/vc kick @user", desc: "Benutzer kicken" },
+              { cmd: "/vc permit @user", desc: "Benutzer erlauben" },
+              { cmd: "/vc claim", desc: "Verlassenen Kanal übernehmen" },
+            ].map((item) => (
+              <div
+                key={item.cmd}
+                className="p-3 rounded-lg bg-[#1E1F22] flex items-center gap-3"
+              >
+                <code className="text-[#5865F2] text-sm font-mono">{item.cmd}</code>
+                <span className="text-gray-400 text-sm">{item.desc}</span>
               </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
