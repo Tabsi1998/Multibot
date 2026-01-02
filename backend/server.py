@@ -380,6 +380,31 @@ async def stop_bot():
     
     return {"success": False, "message": "Bot läuft nicht"}
 
+@api_router.get("/bot/logs")
+async def get_bot_logs(lines: int = 50, log_type: str = "all"):
+    """Get bot logs for debugging"""
+    log_dir = ROOT_DIR / 'logs'
+    result = {"logs": "", "errors": ""}
+    
+    try:
+        if log_type in ["all", "stdout"]:
+            bot_log = log_dir / 'bot.log'
+            if bot_log.exists():
+                with open(bot_log, 'r') as f:
+                    all_lines = f.readlines()
+                    result["logs"] = "".join(all_lines[-lines:])
+        
+        if log_type in ["all", "stderr"]:
+            bot_err = log_dir / 'bot_error.log'
+            if bot_err.exists():
+                with open(bot_err, 'r') as f:
+                    all_lines = f.readlines()
+                    result["errors"] = "".join(all_lines[-lines:])
+    except Exception as e:
+        result["error"] = str(e)
+    
+    return result
+
 # ==================== GUILD CONFIG ====================
 
 @api_router.get("/guilds")
