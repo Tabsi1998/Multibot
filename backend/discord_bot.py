@@ -357,6 +357,293 @@ class StadtLandFlussModal(ui.Modal):
         
         await interaction.response.send_message(f"✅ Antworten gespeichert!", ephemeral=True)
 
+# ==================== TICKET SYSTEM VIEWS ====================
+
+class TicketCreateView(ui.View):
+    """View for creating tickets from panel"""
+    def __init__(self, panel_id: str):
+        super().__init__(timeout=None)
+        self.panel_id = panel_id
+    
+    @ui.button(label="Ticket erstellen", style=discord.ButtonStyle.primary, emoji="🎫", custom_id="ticket_create")
+    async def create_ticket(self, interaction: discord.Interaction, button: ui.Button):
+        from database import get_ticket_panel, create_ticket, increment_ticket_counter, get_ticket_by_channel
+        
+        panel = await get_ticket_panel(self.panel_id)
+        if not panel:
+            await interaction.response.send_message("❌ Ticket-Panel nicht gefunden!", ephemeral=True)
+            return
+        
+        # Check if user already has an open ticket
+        existing_tickets = await db.tickets.find({
+            "guild_id": str(interaction.guild.id),
+            "user_id": str(interaction.user.id),
+            "status": {"$in": ["open", "claimed"]}
+        }).to_list(100)
+        
+        if len(existing_tickets) >= 3:
+            await interaction.response.send_message("❌ Du hast bereits zu viele offene Tickets!", ephemeral=True)
+            return
+        
+        # If panel has categories, show category select first
+        if panel.get('categories') and len(panel['categories']) > 0:
+            view = TicketCategorySelectView(self.panel_id, panel['categories'])
+            await interaction.response.send_message(
+                "📋 **Wähle eine Kategorie für dein Ticket:**",
+                view=view,
+                ephemeral=True
+            )
+            return
+        
+        # Create ticket directly
+        await self.do_create_ticket(interaction, panel, None)
+    
+    async def do_create_ticket(self, interaction: discord.Interaction, panel: dict, category: str):
+        from database import create_ticket, increment_ticket_counter
+        
+        # Get ticket number
+        ticket_number = await increment_ticket_counter(panel['id'])
+        
+        # Create channel name
+        name_template = panel.get('ticket_name_template', 'ticket-{number}')
+        channel_name = name_template.replace('{number}', str(ticket_number))
+        channel_name = channel_name.replace('{user}', interaction.user.name[:20])
+        
+        # Get category
+        ticket_category = None
+        if panel.get('ticket_category'):
+            ticket_category = interaction.guild.get_channel(int(panel['ticket_category']))
+        
+        # Create overwrites
+        overwrites = {
+            interaction.guild.default_role: discord.PermissionOverwrite(view_channel=False),
+            interaction.user: discord.PermissionOverwrite(
+                view_channel=True, 
+                send_messages=True, 
+                read_message_history=True,
+                attach_files=True,
+                embed_links=True
+            ),
+            interaction.guild.me: discord.PermissionOverwrite(
+                view_channel=True,
+                send_messages=True,
+                manage_channels=True,
+                manage_messages=True
+            )
+        }
+        
+        # Add support roles
+        for role_id in panel.get('support_roles', []):
+            role = interaction.guild.get_role(int(role_id))
+            if role:
+                overwrites[role] = discord.PermissionOverwrite(
+                    view_channel=True,
+                    send_messages=True,
+                    read_message_history=True,
+                    manage_messages=True
+                )
+        
+        try:
+            channel = await interaction.guild.create_text_channel(
+                name=channel_name,
+                category=ticket_category,
+                overwrites=overwrites,
+                topic=f"Ticket von {interaction.user.name} | ID: {interaction.user.id}"
+            )
+            
+            # Save ticket to database
+            ticket_data = {
+                "channel_id": str(channel.id),
+                "user_id": str(interaction.user.id),
+                "ticket_number": ticket_number,
+                "category": category
+            }
+            await create_ticket(str(interaction.guild.id), panel['id'], ticket_data)
+            
+            # Create embed
+            embed_color = int(panel.get('color', '#5865F2').replace('#', ''), 16)
+            embed = discord.Embed(
+                title=f"🎫 Ticket #{ticket_number}",
+                description=f"Willkommen {interaction.user.mention}!\n\nEin Support-Mitarbeiter wird sich bald um dich kümmern.",
+                color=embed_color
+            )
+            if category:
+                embed.add_field(name="Kategorie", value=category, inline=True)
+            embed.add_field(name="Erstellt von", value=interaction.user.mention, inline=True)
+            embed.set_footer(text=f"Ticket ID: {ticket_number}")
+            
+            # Create control view
+            view = TicketControlView(str(channel.id), panel['id'], panel.get('claim_enabled', True))
+            
+            # Send initial message
+            content = ""
+            # Ping roles
+            for role_id in panel.get('ping_roles', []):
+                role = interaction.guild.get_role(int(role_id))
+                if role:
+                    content += f"{role.mention} "
+            
+            await channel.send(content=content if content else None, embed=embed, view=view)
+            
+            await interaction.response.send_message(
+                f"✅ Ticket erstellt! → {channel.mention}",
+                ephemeral=True
+            )
+            
+            logger.info(f'Created ticket #{ticket_number} for {interaction.user.name}')
+            
+        except Exception as e:
+            logger.error(f'Error creating ticket: {e}')
+            await interaction.response.send_message(f"❌ Fehler beim Erstellen des Tickets: {e}", ephemeral=True)
+
+
+class TicketCategorySelectView(ui.View):
+    """View for selecting ticket category"""
+    def __init__(self, panel_id: str, categories: list):
+        super().__init__(timeout=60)
+        self.panel_id = panel_id
+        
+        options = []
+        for cat in categories[:25]:  # Max 25 options
+            options.append(discord.SelectOption(
+                label=cat.get('name', 'Kategorie'),
+                emoji=cat.get('emoji') if cat.get('emoji') else None,
+                description=cat.get('description', '')[:100] if cat.get('description') else None,
+                value=cat.get('name', 'Kategorie')
+            ))
+        
+        self.add_item(TicketCategorySelect(panel_id, options))
+
+
+class TicketCategorySelect(ui.Select):
+    def __init__(self, panel_id: str, options: list):
+        super().__init__(
+            placeholder="Kategorie auswählen...",
+            options=options,
+            custom_id="ticket_category_select"
+        )
+        self.panel_id = panel_id
+    
+    async def callback(self, interaction: discord.Interaction):
+        from database import get_ticket_panel
+        
+        selected_category = self.values[0]
+        panel = await get_ticket_panel(self.panel_id)
+        
+        if panel:
+            view = TicketCreateView(self.panel_id)
+            await view.do_create_ticket(interaction, panel, selected_category)
+
+
+class TicketControlView(ui.View):
+    """Control panel for tickets"""
+    def __init__(self, channel_id: str, panel_id: str, claim_enabled: bool = True):
+        super().__init__(timeout=None)
+        self.channel_id = channel_id
+        self.panel_id = panel_id
+        
+        if claim_enabled:
+            self.add_item(TicketClaimButton(channel_id))
+        self.add_item(TicketCloseButton(channel_id))
+
+
+class TicketClaimButton(ui.Button):
+    def __init__(self, channel_id: str):
+        super().__init__(
+            label="Beanspruchen",
+            style=discord.ButtonStyle.primary,
+            emoji="✋",
+            custom_id=f"ticket_claim_{channel_id}"
+        )
+        self.channel_id = channel_id
+    
+    async def callback(self, interaction: discord.Interaction):
+        from database import get_ticket_by_channel, claim_ticket
+        
+        ticket = await get_ticket_by_channel(self.channel_id)
+        if not ticket:
+            await interaction.response.send_message("❌ Ticket nicht gefunden!", ephemeral=True)
+            return
+        
+        if ticket.get('status') == 'claimed':
+            await interaction.response.send_message("❌ Ticket wurde bereits beansprucht!", ephemeral=True)
+            return
+        
+        # Claim ticket
+        await claim_ticket(ticket['id'], str(interaction.user.id))
+        
+        # Update button
+        self.label = f"Beansprucht von {interaction.user.display_name}"
+        self.disabled = True
+        self.style = discord.ButtonStyle.success
+        
+        await interaction.response.edit_message(view=self.view)
+        await interaction.channel.send(f"✋ {interaction.user.mention} hat dieses Ticket beansprucht.")
+
+
+class TicketCloseButton(ui.Button):
+    def __init__(self, channel_id: str):
+        super().__init__(
+            label="Schließen",
+            style=discord.ButtonStyle.danger,
+            emoji="🔒",
+            custom_id=f"ticket_close_{channel_id}"
+        )
+        self.channel_id = channel_id
+    
+    async def callback(self, interaction: discord.Interaction):
+        from database import get_ticket_by_channel, close_ticket
+        
+        ticket = await get_ticket_by_channel(self.channel_id)
+        if not ticket:
+            await interaction.response.send_message("❌ Ticket nicht gefunden!", ephemeral=True)
+            return
+        
+        # Show confirmation
+        view = TicketCloseConfirmView(self.channel_id, ticket['id'])
+        await interaction.response.send_message(
+            "⚠️ **Möchtest du dieses Ticket wirklich schließen?**\n\nDer Kanal wird in 5 Sekunden nach Bestätigung gelöscht.",
+            view=view,
+            ephemeral=True
+        )
+
+
+class TicketCloseConfirmView(ui.View):
+    def __init__(self, channel_id: str, ticket_id: str):
+        super().__init__(timeout=30)
+        self.channel_id = channel_id
+        self.ticket_id = ticket_id
+    
+    @ui.button(label="Ja, schließen", style=discord.ButtonStyle.danger, emoji="✅")
+    async def confirm(self, interaction: discord.Interaction, button: ui.Button):
+        from database import close_ticket
+        
+        await close_ticket(self.ticket_id, str(interaction.user.id))
+        
+        channel = interaction.guild.get_channel(int(self.channel_id))
+        if channel:
+            await interaction.response.send_message("✅ Ticket wird geschlossen...")
+            
+            # Send closing message in ticket
+            embed = discord.Embed(
+                title="🔒 Ticket geschlossen",
+                description=f"Geschlossen von {interaction.user.mention}",
+                color=discord.Color.red()
+            )
+            await channel.send(embed=embed)
+            
+            # Delete after delay
+            await asyncio.sleep(5)
+            try:
+                await channel.delete(reason=f"Ticket geschlossen von {interaction.user.name}")
+            except:
+                pass
+    
+    @ui.button(label="Abbrechen", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: discord.Interaction, button: ui.Button):
+        await interaction.response.edit_message(content="❌ Abgebrochen.", view=None)
+
+
 # ==================== BOT EVENTS ====================
 
 async def sync_guild_data(guild):
