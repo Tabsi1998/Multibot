@@ -1446,21 +1446,6 @@ async def leaderboard(interaction: discord.Interaction):
     
     await interaction.response.send_message(embed=embed)
 
-@bot.tree.command(name="serverinfo", description="Zeigt Server-Informationen")
-async def serverinfo(interaction: discord.Interaction):
-    guild = interaction.guild
-    
-    embed = discord.Embed(title=guild.name, color=discord.Color.blurple())
-    embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
-    embed.add_field(name="Owner", value=guild.owner.mention, inline=True)
-    embed.add_field(name="Mitglieder", value=guild.member_count, inline=True)
-    embed.add_field(name="Kanäle", value=len(guild.channels), inline=True)
-    embed.add_field(name="Rollen", value=len(guild.roles), inline=True)
-    embed.add_field(name="Erstellt am", value=guild.created_at.strftime("%d.%m.%Y"), inline=True)
-    embed.add_field(name="Boosts", value=guild.premium_subscription_count, inline=True)
-    
-    await interaction.response.send_message(embed=embed)
-
 # ==================== SCHEDULED TASKS ====================
 
 @tasks.loop(minutes=1)
