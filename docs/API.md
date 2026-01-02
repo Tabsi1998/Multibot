@@ -14,7 +14,112 @@ https://your-domain.com/api
 
 ### Authentifizierung
 
-Aktuell keine Authentifizierung erforderlich (lokale Verwendung).
+Die API verwendet JWT (JSON Web Token) für die Authentifizierung.
+
+**Header Format:**
+```
+Authorization: Bearer <your_jwt_token>
+```
+
+**Öffentliche Endpoints (kein Token erforderlich):**
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/bot/status`
+
+**Geschützte Endpoints (Token erforderlich):**
+- Alle anderen Endpoints
+
+**Admin-only Endpoints (Admin-Token erforderlich):**
+- `POST /api/bot/configure`
+- `GET /api/auth/users`
+- `PUT /api/auth/users/{id}/admin`
+- `DELETE /api/auth/users/{id}`
+
+---
+
+### Authentifizierung
+
+#### Benutzer registrieren
+
+```http
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "username": "MeinName",
+  "email": "email@example.com",
+  "password": "sicheres-passwort"
+}
+```
+
+**Antwort:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid",
+    "username": "MeinName",
+    "email": "email@example.com",
+    "is_admin": true
+  },
+  "message": "Registrierung erfolgreich! Du bist der erste Benutzer und damit Administrator."
+}
+```
+
+> **Hinweis:** Der erste registrierte Benutzer wird automatisch Administrator!
+
+#### Benutzer anmelden
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "email@example.com",
+  "password": "sicheres-passwort"
+}
+```
+
+**Antwort:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "uuid",
+    "username": "MeinName",
+    "email": "email@example.com",
+    "is_admin": true
+  }
+}
+```
+
+#### Aktueller Benutzer
+
+```http
+GET /api/auth/me
+Authorization: Bearer <token>
+```
+
+#### Benutzer auflisten (Admin)
+
+```http
+GET /api/auth/users
+Authorization: Bearer <admin_token>
+```
+
+#### Admin-Status ändern (Admin)
+
+```http
+PUT /api/auth/users/{user_id}/admin?is_admin=true
+Authorization: Bearer <admin_token>
+```
+
+#### Benutzer löschen (Admin)
+
+```http
+DELETE /api/auth/users/{user_id}
+Authorization: Bearer <admin_token>
+```
 
 ---
 
@@ -35,10 +140,11 @@ GET /api/bot/status
 }
 ```
 
-#### Bot konfigurieren
+#### Bot konfigurieren (Admin)
 
 ```http
 POST /api/bot/configure
+Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {
