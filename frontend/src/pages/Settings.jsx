@@ -271,6 +271,123 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Bot Appearance */}
+      <Card className="bg-[#2B2D31] border-[#1E1F22]">
+        <CardHeader>
+          <CardTitle className="text-white font-[Outfit] flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[#EB459E]" />
+            Bot Aussehen
+          </CardTitle>
+          <CardDescription className="text-gray-400">
+            Personalisiere das Aussehen und Verhalten des Bots
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Bot Status */}
+          <div className="space-y-2">
+            <Label className="text-gray-300">Bot Status</Label>
+            <Select
+              value={config.bot_status || "online"}
+              onValueChange={(value) => setConfig({ ...config, bot_status: value })}
+              disabled={!guildId}
+            >
+              <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                <SelectItem value="online" className="text-white hover:bg-[#404249]">
+                  🟢 Online
+                </SelectItem>
+                <SelectItem value="idle" className="text-white hover:bg-[#404249]">
+                  🟡 Abwesend
+                </SelectItem>
+                <SelectItem value="dnd" className="text-white hover:bg-[#404249]">
+                  🔴 Bitte nicht stören
+                </SelectItem>
+                <SelectItem value="invisible" className="text-white hover:bg-[#404249]">
+                  ⚫ Unsichtbar
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Bot Activity Type */}
+          <div className="space-y-2">
+            <Label className="text-gray-300">Aktivitäts-Typ</Label>
+            <Select
+              value={config.bot_activity_type || "playing"}
+              onValueChange={(value) => setConfig({ ...config, bot_activity_type: value })}
+              disabled={!guildId}
+            >
+              <SelectTrigger className="bg-[#1E1F22] border-none text-white">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#1E1F22] border-[#404249]">
+                <SelectItem value="playing" className="text-white hover:bg-[#404249]">
+                  🎮 Spielt
+                </SelectItem>
+                <SelectItem value="watching" className="text-white hover:bg-[#404249]">
+                  👀 Schaut
+                </SelectItem>
+                <SelectItem value="listening" className="text-white hover:bg-[#404249]">
+                  🎧 Hört
+                </SelectItem>
+                <SelectItem value="competing" className="text-white hover:bg-[#404249]">
+                  🏆 Tritt an in
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Bot Activity Text */}
+          <div className="space-y-2">
+            <Label className="text-gray-300">Aktivitäts-Text</Label>
+            <Input
+              value={config.bot_activity_text || ""}
+              onChange={(e) => setConfig({ ...config, bot_activity_text: e.target.value })}
+              className="bg-[#1E1F22] border-none text-white"
+              placeholder="mit /help starten"
+              disabled={!guildId}
+            />
+            <p className="text-xs text-gray-500">
+              Wird als "{config.bot_activity_type === "playing" ? "Spielt" : config.bot_activity_type === "watching" ? "Schaut" : config.bot_activity_type === "listening" ? "Hört" : "Tritt an in"} {config.bot_activity_text || '...'}" angezeigt
+            </p>
+          </div>
+
+          {/* Embed Color */}
+          <div className="space-y-2">
+            <Label className="text-gray-300">Embed Farbe</Label>
+            <div className="flex gap-2">
+              <Input
+                type="color"
+                value={config.bot_embed_color || "#5865F2"}
+                onChange={(e) => setConfig({ ...config, bot_embed_color: e.target.value })}
+                className="bg-[#1E1F22] border-none w-14 h-10 p-1 cursor-pointer"
+                disabled={!guildId}
+              />
+              <Input
+                value={config.bot_embed_color || "#5865F2"}
+                onChange={(e) => setConfig({ ...config, bot_embed_color: e.target.value })}
+                className="bg-[#1E1F22] border-none text-white font-mono flex-1"
+                disabled={!guildId}
+              />
+            </div>
+            <p className="text-xs text-gray-500">
+              Wird für alle Bot-Embeds verwendet
+            </p>
+          </div>
+
+          <Button
+            onClick={saveConfig}
+            disabled={loading || !guildId}
+            className="bg-[#EB459E] hover:bg-[#EB459E]/80 text-white btn-press w-full"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Aussehen speichern
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Info Card */}
       <Card className="bg-[#2B2D31] border-[#1E1F22]">
         <CardHeader>
