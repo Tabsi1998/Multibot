@@ -611,50 +611,119 @@ async def on_voice_state_update(member, before, after):
         if before.channel and (not after.channel or before.channel.id != after.channel.id):
             await end_voice_session(guild_id, str(member.id))
     
-    # ==================== TEMP CHANNEL MANAGEMENT ====================
-    if not config.get('temp_channels_enabled'):
-        return
+    # ==================== MULTI TEMP CHANNEL MANAGEMENT ====================
+    from database import get_temp_creators, get_temp_creator_by_channel, increment_temp_creator_counter, get_numbering
     
-    # User joined temp channel creator
-    if after.channel and str(after.channel.id) == config.get('temp_channel_creator'):
-        category = member.guild.get_channel(int(config['temp_channel_category'])) if config.get('temp_channel_category') else after.channel.category
+    # User joined a voice channel - check if it's a creator
+    if after.channel:
+        creator = await get_temp_creator_by_channel(str(after.channel.id))
         
-        # Create channel name
-        name_template = config.get('temp_channel_default_name', "🔊 {user}'s Kanal")
-        channel_name = name_template.replace('{user}', member.display_name)
-        
-        # Create temp channel
-        channel = await member.guild.create_voice_channel(
-            name=channel_name,
-            category=category,
-            user_limit=config.get('temp_channel_default_limit', 0),
-            bitrate=min(config.get('temp_channel_default_bitrate', 64000), member.guild.bitrate_limit)
-        )
-        
-        # Set permissions
-        await channel.set_permissions(member, manage_channels=True, move_members=True, mute_members=True)
-        
-        # Move user
-        await member.move_to(channel)
-        
-        # Save to database
-        await create_temp_channel(guild_id, str(channel.id), str(member.id), channel_name)
-        
-        # Send control panel
-        embed = discord.Embed(
-            title="🎤 Dein Temp-Kanal",
-            description=f"Willkommen in deinem Kanal, {member.mention}!\n\nBenutze die Buttons um deinen Kanal zu verwalten.",
-            color=discord.Color.blue()
-        )
-        embed.add_field(name="Befehle", value="`/vc rename` - Umbenennen\n`/vc limit` - Limit setzen\n`/vc kick` - Benutzer kicken\n`/vc permit` - Benutzer erlauben", inline=False)
-        
-        view = TempChannelControlView(str(channel.id), member.id)
-        try:
-            await channel.send(embed=embed, view=view)
-        except:
-            pass
+        if creator and creator.get('enabled', True):
+            # Get category
+            category = None
+            if creator.get('category_id'):
+                category = member.guild.get_channel(int(creator['category_id']))
+            if not category:
+                category = after.channel.category
+            
+            # Get next number
+            counter = await increment_temp_creator_counter(creator['id'])
+            numbering = get_numbering(counter, creator.get('numbering_type', 'number'))
+            
+            # Create channel name from template
+            name_template = creator.get('name_template', "🔊 {user}'s Kanal")
+            channel_name = name_template.replace('{user}', member.display_name)
+            channel_name = channel_name.replace('{number}', numbering)
+            channel_name = channel_name.replace('{game}', after.channel.name.split()[0] if after.channel.name else 'Game')
+            
+            # Create temp channel
+            try:
+                channel = await member.guild.create_voice_channel(
+                    name=channel_name,
+                    category=category,
+                    user_limit=creator.get('default_limit', 0),
+                    bitrate=min(creator.get('default_bitrate', 64000), member.guild.bitrate_limit)
+                )
+                
+                # Position: top = move up, bottom = stay
+                if creator.get('position') == 'top' and category:
+                    # Find the creator channel position and place new channel below it
+                    try:
+                        creator_channel = member.guild.get_channel(int(creator['channel_id']))
+                        if creator_channel:
+                            await channel.edit(position=creator_channel.position + 1)
+                    except:
+                        pass
+                
+                # Set permissions
+                await channel.set_permissions(member, manage_channels=True, move_members=True, mute_members=True)
+                
+                # Move user
+                await member.move_to(channel)
+                
+                # Save to database
+                await create_temp_channel(guild_id, str(channel.id), str(member.id), channel_name, creator['id'])
+                
+                # Send control panel
+                embed = discord.Embed(
+                    title="🎤 Dein Temp-Kanal",
+                    description=f"Willkommen in **{channel_name}**, {member.mention}!",
+                    color=discord.Color.blue()
+                )
+                embed.add_field(
+                    name="📝 Befehle", 
+                    value="`/vc rename` - Umbenennen\n`/vc limit` - Limit setzen\n`/vc lock` - Sperren\n`/vc kick` - Benutzer kicken", 
+                    inline=False
+                )
+                
+                view = TempChannelControlView(str(channel.id), member.id)
+                try:
+                    await channel.send(embed=embed, view=view)
+                except:
+                    pass
+                    
+                logger.info(f'Created temp channel: {channel_name} for {member.display_name}')
+            except Exception as e:
+                logger.error(f'Error creating temp channel: {e}')
     
-    # User left a temp channel
+    # ==================== LEGACY SINGLE CREATOR (fallback) ====================
+    # Check old single-creator config for backwards compatibility
+    if after.channel and config.get('temp_channels_enabled') and config.get('temp_channel_creator'):
+        if str(after.channel.id) == config.get('temp_channel_creator'):
+            # Check if we already handled this with multi-creator
+            creator = await get_temp_creator_by_channel(str(after.channel.id))
+            if not creator:
+                category = member.guild.get_channel(int(config['temp_channel_category'])) if config.get('temp_channel_category') else after.channel.category
+                
+                name_template = config.get('temp_channel_default_name', "🔊 {user}'s Kanal")
+                channel_name = name_template.replace('{user}', member.display_name)
+                
+                try:
+                    channel = await member.guild.create_voice_channel(
+                        name=channel_name,
+                        category=category,
+                        user_limit=config.get('temp_channel_default_limit', 0),
+                        bitrate=min(config.get('temp_channel_default_bitrate', 64000), member.guild.bitrate_limit)
+                    )
+                    
+                    await channel.set_permissions(member, manage_channels=True, move_members=True, mute_members=True)
+                    await member.move_to(channel)
+                    await create_temp_channel(guild_id, str(channel.id), str(member.id), channel_name)
+                    
+                    embed = discord.Embed(
+                        title="🎤 Dein Temp-Kanal",
+                        description=f"Willkommen in deinem Kanal, {member.mention}!",
+                        color=discord.Color.blue()
+                    )
+                    view = TempChannelControlView(str(channel.id), member.id)
+                    try:
+                        await channel.send(embed=embed, view=view)
+                    except:
+                        pass
+                except Exception as e:
+                    logger.error(f'Error creating legacy temp channel: {e}')
+    
+    # ==================== DELETE EMPTY TEMP CHANNELS ====================
     if before.channel:
         temp_channel = await get_temp_channel(str(before.channel.id))
         if temp_channel:
@@ -662,6 +731,7 @@ async def on_voice_state_update(member, before, after):
                 try:
                     await before.channel.delete()
                     await delete_temp_channel(str(before.channel.id))
+                    logger.info(f'Deleted empty temp channel: {before.channel.name}')
                 except:
                     pass
 
