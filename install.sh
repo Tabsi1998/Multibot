@@ -16,6 +16,27 @@ PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
+# Get local IP
+get_local_ip() {
+    # Try different methods to get local IP
+    if command -v ip &> /dev/null; then
+        LOCAL_IP=$(ip route get 1 | awk '{print $(NF-2);exit}' 2>/dev/null)
+    elif command -v hostname &> /dev/null; then
+        LOCAL_IP=$(hostname -I | awk '{print $1}' 2>/dev/null)
+    elif command -v ifconfig &> /dev/null; then
+        LOCAL_IP=$(ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1' | head -1)
+    fi
+    
+    # Fallback to localhost
+    if [ -z "$LOCAL_IP" ]; then
+        LOCAL_IP="localhost"
+    fi
+    
+    echo "$LOCAL_IP"
+}
+
+LOCAL_IP=$(get_local_ip)
+
 # Banner
 echo -e "${PURPLE}"
 echo "╔═══════════════════════════════════════════════════════════╗"
@@ -25,6 +46,8 @@ echo "║     Der ultimative Discord Bot mit Web-Dashboard          ║"
 echo "║                                                           ║"
 echo "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
+echo -e "${CYAN}📡 Erkannte lokale IP: ${LOCAL_IP}${NC}"
+echo ""
 
 # Check if running as root
 if [ "$EUID" -eq 0 ]; then
