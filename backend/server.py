@@ -872,9 +872,22 @@ async def list_ticket_panels(guild_id: str):
 
 @api_router.post("/guilds/{guild_id}/ticket-panels")
 async def create_ticket_panel_api(guild_id: str, panel: TicketPanelCreate):
-    """Create a ticket panel"""
-    from database import create_ticket_panel
+    """Create a ticket panel and automatically send to Discord"""
+    from database import create_ticket_panel, add_pending_action
     result = await create_ticket_panel(guild_id, panel.dict())
+    
+    # Automatically send to Discord
+    if result and result.get('channel_id'):
+        await add_pending_action(
+            "send_ticket_panel",
+            guild_id,
+            {
+                "panel_id": result['id'],
+                "channel_id": result['channel_id'],
+                "panel": result
+            }
+        )
+    
     return result
 
 @api_router.get("/guilds/{guild_id}/ticket-panels/{panel_id}")
@@ -888,9 +901,24 @@ async def get_ticket_panel_api(guild_id: str, panel_id: str):
 
 @api_router.put("/guilds/{guild_id}/ticket-panels/{panel_id}")
 async def update_ticket_panel_api(guild_id: str, panel_id: str, updates: Dict[str, Any]):
-    """Update a ticket panel"""
-    from database import update_ticket_panel
+    """Update a ticket panel and automatically update in Discord"""
+    from database import update_ticket_panel, get_ticket_panel, add_pending_action
     await update_ticket_panel(panel_id, updates)
+    
+    # Get updated panel and send update action
+    panel = await get_ticket_panel(panel_id)
+    if panel and panel.get('message_id'):
+        await add_pending_action(
+            "update_ticket_panel",
+            guild_id,
+            {
+                "panel_id": panel_id,
+                "channel_id": panel.get('channel_id'),
+                "message_id": panel.get('message_id'),
+                "panel": panel
+            }
+        )
+    
     return {"success": True}
 
 @api_router.delete("/guilds/{guild_id}/ticket-panels/{panel_id}")
