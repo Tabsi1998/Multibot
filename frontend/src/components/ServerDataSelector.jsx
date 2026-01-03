@@ -179,13 +179,15 @@ export default function ServerDataSelector({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0 bg-[#2B2D31] border-[#1E1F22]">
+      <PopoverContent className="w-[300px] p-0 bg-[#2B2D31] border-[#1E1F22]" style={{ maxHeight: '400px' }}>
         <Command className="bg-transparent">
           <CommandInput 
             placeholder={`${typeLabels[type]} suchen...`} 
             className="bg-transparent border-none text-white"
           />
-          <CommandList className="max-h-[300px]">
+          <CommandList className="max-h-[300px] overflow-y-auto"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: '#5865F2 #2B2D31' }}
+          >
             <CommandEmpty className="text-gray-400 text-sm py-6 text-center">
               {loading ? "Lädt..." : serverData ? `Keine ${typeLabels[type]} gefunden` : "Daten werden geladen..."}
             </CommandEmpty>
