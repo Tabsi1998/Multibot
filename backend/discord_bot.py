@@ -2155,6 +2155,179 @@ async def voice_xp_task():
     except Exception as e:
         logger.error(f"Voice XP task error: {e}")
 
+@tasks.loop(seconds=3)  # Check every 3 seconds for fast response
+async def process_pending_actions():
+    """Process pending actions from the API"""
+    try:
+        from database import get_pending_actions, mark_action_complete, delete_old_actions
+        
+        # Clean up old actions periodically
+        await delete_old_actions()
+        
+        actions = await get_pending_actions()
+        
+        for action in actions:
+            try:
+                action_type = action.get('type')
+                guild_id = action.get('guild_id')
+                data = action.get('data', {})
+                
+                guild = bot.get_guild(int(guild_id))
+                if not guild:
+                    await mark_action_complete(action['id'])
+                    continue
+                
+                if action_type == "send_reaction_role":
+                    await send_reaction_role_to_channel(guild, data)
+                elif action_type == "send_ticket_panel":
+                    await send_ticket_panel_to_channel(guild, data)
+                
+                await mark_action_complete(action['id'])
+                logger.info(f"Processed action: {action_type}")
+                
+            except Exception as e:
+                logger.error(f"Error processing action {action.get('id')}: {e}")
+                await mark_action_complete(action['id'])  # Mark as complete to avoid infinite loop
+                
+    except Exception as e:
+        logger.error(f"Pending actions task error: {e}")
+
+async def send_reaction_role_to_channel(guild: discord.Guild, data: dict):
+    """Send a reaction role embed to a channel"""
+    channel_id = data.get('channel_id')
+    rr = data.get('reaction_role', {})
+    
+    channel = guild.get_channel(int(channel_id))
+    if not channel:
+        logger.error(f"Channel {channel_id} not found")
+        return
+    
+    # Create embed
+    color_str = rr.get('color', '#5865F2')
+    try:
+        embed_color = int(color_str.replace('#', ''), 16)
+    except:
+        embed_color = 0x5865F2
+    
+    embed = discord.Embed(
+        title=rr.get('title', '🎭 Wähle deine Rollen'),
+        description=rr.get('description', 'Klicke auf einen Button um die entsprechende Rolle zu erhalten.'),
+        color=embed_color
+    )
+    
+    if rr.get('embed_image'):
+        embed.set_image(url=rr['embed_image'])
+    if rr.get('embed_thumbnail'):
+        embed.set_thumbnail(url=rr['embed_thumbnail'])
+    
+    roles = rr.get('roles', [])
+    if not roles and rr.get('role_id'):
+        roles = [{"emoji": rr.get('emoji', '🎮'), "role_id": rr.get('role_id'), "label": ""}]
+    
+    # Create view with buttons
+    view = ui.View(timeout=None)
+    
+    for i, role_data in enumerate(roles[:10]):
+        emoji = role_data.get('emoji', '🎮')
+        role_id = role_data.get('role_id')
+        label = role_data.get('label', '')
+        
+        button = ui.Button(
+            label=label or f"Rolle {i+1}",
+            emoji=emoji,
+            style=discord.ButtonStyle.primary,
+            custom_id=f"rr_{rr.get('id')}_{role_id}"
+        )
+        
+        async def button_callback(interaction: discord.Interaction, rid=role_id):
+            role = interaction.guild.get_role(int(rid))
+            if not role:
+                await interaction.response.send_message("❌ Rolle nicht gefunden!", ephemeral=True)
+                return
+            
+            if role in interaction.user.roles:
+                await interaction.user.remove_roles(role)
+                await interaction.response.send_message(f"✅ Rolle **{role.name}** entfernt!", ephemeral=True)
+            else:
+                await interaction.user.add_roles(role)
+                await interaction.response.send_message(f"✅ Rolle **{role.name}** erhalten!", ephemeral=True)
+        
+        button.callback = button_callback
+        view.add_item(button)
+    
+    message = await channel.send(embed=embed, view=view)
+    
+    # Update the reaction role with the message ID
+    from database import update_reaction_role
+    await update_reaction_role(rr.get('id'), {"message_id": str(message.id)})
+    
+    logger.info(f"Sent reaction role embed to {channel.name}")
+
+async def send_ticket_panel_to_channel(guild: discord.Guild, data: dict):
+    """Send a ticket panel embed to a channel"""
+    channel_id = data.get('channel_id')
+    panel = data.get('panel', {})
+    panel_id = data.get('panel_id')
+    
+    channel = guild.get_channel(int(channel_id))
+    if not channel:
+        logger.error(f"Channel {channel_id} not found")
+        return
+    
+    # Create embed
+    color_str = panel.get('color', '#5865F2')
+    try:
+        embed_color = int(color_str.replace('#', ''), 16)
+    except:
+        embed_color = 0x5865F2
+    
+    embed = discord.Embed(
+        title=panel.get('title', '🎫 Support Tickets'),
+        description=panel.get('description', 'Klicke auf den Button um ein Ticket zu erstellen.'),
+        color=embed_color
+    )
+    
+    # Add categories if any
+    categories = panel.get('categories', [])
+    if categories:
+        cat_text = "\n".join([f"{c.get('emoji', '•')} **{c.get('name', '')}**" for c in categories])
+        embed.add_field(name="Kategorien", value=cat_text, inline=False)
+    
+    embed.set_footer(text="Ticket System")
+    
+    # Create button
+    view = ui.View(timeout=None)
+    button = ui.Button(
+        label=panel.get('button_label', 'Ticket erstellen'),
+        emoji=panel.get('button_emoji', '🎫'),
+        style=discord.ButtonStyle.primary,
+        custom_id=f"ticket_panel_{panel_id}"
+    )
+    
+    async def ticket_button_callback(interaction: discord.Interaction):
+        create_view = TicketCreateView(panel_id)
+        # Check for categories
+        if panel.get('categories'):
+            cat_view = TicketCategorySelectView(panel_id, panel['categories'])
+            await interaction.response.send_message(
+                "📋 **Wähle eine Kategorie für dein Ticket:**",
+                view=cat_view,
+                ephemeral=True
+            )
+        else:
+            await create_view.do_create_ticket(interaction, panel, None)
+    
+    button.callback = ticket_button_callback
+    view.add_item(button)
+    
+    message = await channel.send(embed=embed, view=view)
+    
+    # Update panel with message ID
+    from database import update_ticket_panel
+    await update_ticket_panel(panel_id, {"message_id": str(message.id)})
+    
+    logger.info(f"Sent ticket panel to {channel.name}")
+
 # ==================== TICKET COMMANDS ====================
 
 ticket_group = app_commands.Group(name="ticket", description="Ticket System Befehle")
