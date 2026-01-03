@@ -928,6 +928,16 @@ export default function Tickets() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
+                        onClick={() => sendPanel(panel.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-[#23A559] hover:text-[#23A559] hover:bg-[#23A559]/10"
+                        title="Im Kanal senden"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Senden
+                      </Button>
+                      <Button
                         onClick={() => openEditPanel(panel)}
                         variant="ghost"
                         size="icon"
