@@ -902,6 +902,31 @@ async def delete_ticket_panel_api(guild_id: str, panel_id: str):
         raise HTTPException(status_code=404, detail="Panel not found")
     return {"deleted": True}
 
+@api_router.post("/guilds/{guild_id}/ticket-panels/{panel_id}/send")
+async def send_ticket_panel_embed(guild_id: str, panel_id: str, channel_id: str = None):
+    """Queue a ticket panel to be sent to Discord"""
+    from database import add_pending_action, get_ticket_panel
+    
+    panel = await get_ticket_panel(panel_id)
+    if not panel:
+        raise HTTPException(status_code=404, detail="Panel not found")
+    
+    target_channel = channel_id or panel.get('channel_id')
+    if not target_channel:
+        raise HTTPException(status_code=400, detail="Kein Kanal angegeben")
+    
+    action_id = await add_pending_action(
+        "send_ticket_panel",
+        guild_id,
+        {
+            "panel_id": panel_id,
+            "channel_id": target_channel,
+            "panel": panel
+        }
+    )
+    
+    return {"queued": True, "action_id": action_id, "message": "Ticket Panel wird gesendet..."}
+
 @api_router.get("/guilds/{guild_id}/tickets")
 async def list_tickets(guild_id: str, status: Optional[str] = None):
     """List tickets"""
