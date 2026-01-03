@@ -726,6 +726,7 @@ async def on_ready():
     # Start background tasks
     check_scheduled_news.start()
     voice_xp_task.start()
+    process_pending_actions.start()  # New task for processing API actions
 
 @bot.event
 async def on_guild_join(guild):
