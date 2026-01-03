@@ -1752,38 +1752,135 @@ async def game_dice(interaction: discord.Interaction, sides: int = 6):
     await interaction.response.send_message(embed=embed)
 
 @game_group.command(name="rps", description="Schere, Stein, Papier")
-@app_commands.describe(choice="Deine Wahl")
-@app_commands.choices(choice=[
-    app_commands.Choice(name="✊ Stein", value="stein"),
-    app_commands.Choice(name="✋ Papier", value="papier"),
-    app_commands.Choice(name="✌️ Schere", value="schere")
-])
-async def game_rps(interaction: discord.Interaction, choice: str):
+@app_commands.describe(gegner="Spiele gegen einen anderen Spieler (optional)")
+async def game_rps(interaction: discord.Interaction, gegner: discord.Member = None):
+    """Rock Paper Scissors - against bot or another player"""
     choices = {"stein": "✊", "papier": "✋", "schere": "✌️"}
-    bot_choice = random.choice(list(choices.keys()))
     
-    # Determine winner
-    if choice == bot_choice:
-        result = "🤝 Unentschieden!"
-        color = discord.Color.yellow()
-    elif (choice == "stein" and bot_choice == "schere") or \
-         (choice == "schere" and bot_choice == "papier") or \
-         (choice == "papier" and bot_choice == "stein"):
-        result = "🎉 Du gewinnst!"
-        color = discord.Color.green()
+    if gegner and gegner != interaction.user and not gegner.bot:
+        # Multiplayer mode
+        embed = discord.Embed(
+            title="✊✋✌️ Schere, Stein, Papier",
+            description=f"{interaction.user.mention} fordert {gegner.mention} heraus!\n\nBeide Spieler müssen wählen:",
+            color=discord.Color.blue()
+        )
+        
+        view = RPSMultiplayerView(interaction.user, gegner)
+        await interaction.response.send_message(embed=embed, view=view)
     else:
-        result = "😢 Du verlierst!"
-        color = discord.Color.red()
+        # Single player mode - show choices
+        view = RPSSingleView()
+        embed = discord.Embed(
+            title="✊✋✌️ Schere, Stein, Papier",
+            description="Wähle deine Option:",
+            color=discord.Color.blue()
+        )
+        await interaction.response.send_message(embed=embed, view=view)
+
+class RPSSingleView(ui.View):
+    def __init__(self):
+        super().__init__(timeout=30)
     
-    embed = discord.Embed(
-        title="✊✋✌️ Schere, Stein, Papier",
-        color=color
-    )
-    embed.add_field(name="Du", value=choices[choice], inline=True)
-    embed.add_field(name="Bot", value=choices[bot_choice], inline=True)
-    embed.add_field(name="Ergebnis", value=result, inline=False)
+    @ui.button(label="Stein", emoji="✊", style=discord.ButtonStyle.primary)
+    async def rock(self, interaction: discord.Interaction, button: ui.Button):
+        await self.play(interaction, "stein")
     
-    await interaction.response.send_message(embed=embed)
+    @ui.button(label="Papier", emoji="✋", style=discord.ButtonStyle.primary)
+    async def paper(self, interaction: discord.Interaction, button: ui.Button):
+        await self.play(interaction, "papier")
+    
+    @ui.button(label="Schere", emoji="✌️", style=discord.ButtonStyle.primary)
+    async def scissors(self, interaction: discord.Interaction, button: ui.Button):
+        await self.play(interaction, "schere")
+    
+    async def play(self, interaction: discord.Interaction, choice: str):
+        choices = {"stein": "✊", "papier": "✋", "schere": "✌️"}
+        bot_choice = random.choice(list(choices.keys()))
+        
+        if choice == bot_choice:
+            result = "🤝 Unentschieden!"
+            color = discord.Color.yellow()
+        elif (choice == "stein" and bot_choice == "schere") or \
+             (choice == "schere" and bot_choice == "papier") or \
+             (choice == "papier" and bot_choice == "stein"):
+            result = "🎉 Du gewinnst!"
+            color = discord.Color.green()
+        else:
+            result = "😢 Du verlierst!"
+            color = discord.Color.red()
+        
+        embed = discord.Embed(
+            title="✊✋✌️ Schere, Stein, Papier",
+            color=color
+        )
+        embed.add_field(name="Du", value=choices[choice], inline=True)
+        embed.add_field(name="Bot", value=choices[bot_choice], inline=True)
+        embed.add_field(name="Ergebnis", value=result, inline=False)
+        
+        await interaction.response.edit_message(embed=embed, view=None)
+
+class RPSMultiplayerView(ui.View):
+    def __init__(self, player1: discord.Member, player2: discord.Member):
+        super().__init__(timeout=60)
+        self.player1 = player1
+        self.player2 = player2
+        self.choices = {}
+    
+    @ui.button(label="Stein", emoji="✊", style=discord.ButtonStyle.primary)
+    async def rock(self, interaction: discord.Interaction, button: ui.Button):
+        await self.make_choice(interaction, "stein")
+    
+    @ui.button(label="Papier", emoji="✋", style=discord.ButtonStyle.primary)
+    async def paper(self, interaction: discord.Interaction, button: ui.Button):
+        await self.make_choice(interaction, "papier")
+    
+    @ui.button(label="Schere", emoji="✌️", style=discord.ButtonStyle.primary)
+    async def scissors(self, interaction: discord.Interaction, button: ui.Button):
+        await self.make_choice(interaction, "schere")
+    
+    async def make_choice(self, interaction: discord.Interaction, choice: str):
+        if interaction.user.id not in [self.player1.id, self.player2.id]:
+            await interaction.response.send_message("❌ Du bist nicht Teil dieses Spiels!", ephemeral=True)
+            return
+        
+        if interaction.user.id in self.choices:
+            await interaction.response.send_message("❌ Du hast bereits gewählt!", ephemeral=True)
+            return
+        
+        self.choices[interaction.user.id] = choice
+        await interaction.response.send_message(f"✅ Du hast gewählt!", ephemeral=True)
+        
+        # Check if both players chose
+        if len(self.choices) == 2:
+            await self.show_result(interaction)
+    
+    async def show_result(self, interaction: discord.Interaction):
+        choices_icons = {"stein": "✊", "papier": "✋", "schere": "✌️"}
+        p1_choice = self.choices[self.player1.id]
+        p2_choice = self.choices[self.player2.id]
+        
+        if p1_choice == p2_choice:
+            result = "🤝 Unentschieden!"
+            color = discord.Color.yellow()
+        elif (p1_choice == "stein" and p2_choice == "schere") or \
+             (p1_choice == "schere" and p2_choice == "papier") or \
+             (p1_choice == "papier" and p2_choice == "stein"):
+            result = f"🎉 {self.player1.mention} gewinnt!"
+            color = discord.Color.green()
+        else:
+            result = f"🎉 {self.player2.mention} gewinnt!"
+            color = discord.Color.green()
+        
+        embed = discord.Embed(
+            title="✊✋✌️ Ergebnis",
+            color=color
+        )
+        embed.add_field(name=self.player1.display_name, value=choices_icons[p1_choice], inline=True)
+        embed.add_field(name="VS", value="⚔️", inline=True)
+        embed.add_field(name=self.player2.display_name, value=choices_icons[p2_choice], inline=True)
+        embed.add_field(name="Ergebnis", value=result, inline=False)
+        
+        await interaction.message.edit(embed=embed, view=None)
 
 @game_group.command(name="8ball", description="Frage die magische 8-Ball")
 @app_commands.describe(question="Deine Frage")
