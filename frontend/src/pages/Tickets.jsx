@@ -145,6 +145,15 @@ export default function Tickets() {
     }
   };
 
+  const sendPanel = async (panelId) => {
+    try {
+      const res = await axios.post(`${API}/guilds/${guildId}/ticket-panels/${panelId}/send`, {}, { headers: getAuthHeader() });
+      toast.success("Panel wird in Discord gesendet!");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Fehler beim Senden");
+    }
+  };
+
   const resetNewPanel = () => {
     setNewPanel({
       channel_id: "",
