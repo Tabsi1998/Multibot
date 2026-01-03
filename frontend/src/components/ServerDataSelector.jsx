@@ -43,12 +43,6 @@ export default function ServerDataSelector({
   const [serverData, setServerData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (guildId && open && !serverData) {
-      fetchServerData();
-    }
-  }, [guildId, open]);
-
   const fetchServerData = async () => {
     setLoading(true);
     try {
@@ -62,6 +56,13 @@ export default function ServerDataSelector({
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (guildId && open && !serverData) {
+      fetchServerData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guildId, open]);
 
   const items = useMemo(() => {
     if (!serverData) return [];

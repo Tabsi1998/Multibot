@@ -59,12 +59,6 @@ export default function DashboardLayout({ user, onLogout }) {
   const [botStatus, setBotStatus] = useState({ running: false, token_configured: false });
   const location = useLocation();
 
-  useEffect(() => {
-    fetchBotStatus();
-    const interval = setInterval(fetchBotStatus, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
   const fetchBotStatus = async () => {
     try {
       const res = await axios.get(`${API}/bot/status`);
@@ -73,6 +67,13 @@ export default function DashboardLayout({ user, onLogout }) {
       console.error("Failed to fetch bot status", e);
     }
   };
+
+  useEffect(() => {
+    fetchBotStatus();
+    const interval = setInterval(fetchBotStatus, 10000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const allNavItems = user?.is_admin 
     ? [...navItems, ...adminNavItems] 
