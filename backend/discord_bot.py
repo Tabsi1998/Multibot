@@ -2485,6 +2485,87 @@ async def send_ticket_panel_to_channel(guild: discord.Guild, data: dict):
     
     logger.info(f"Sent ticket panel to {channel.name}")
 
+async def update_reaction_role_in_channel(guild: discord.Guild, data: dict):
+    """Update an existing reaction role embed"""
+    channel_id = data.get('channel_id')
+    message_id = data.get('message_id')
+    rr = data.get('reaction_role', {})
+    
+    if not channel_id or not message_id:
+        return
+    
+    channel = guild.get_channel(int(channel_id))
+    if not channel:
+        return
+    
+    try:
+        message = await channel.fetch_message(int(message_id))
+        
+        # Create updated embed
+        color_str = rr.get('color', '#5865F2')
+        try:
+            embed_color = int(color_str.replace('#', ''), 16)
+        except:
+            embed_color = 0x5865F2
+        
+        embed = discord.Embed(
+            title=rr.get('title', '🎭 Wähle deine Rollen'),
+            description=rr.get('description', 'Klicke auf einen Button.'),
+            color=embed_color
+        )
+        
+        if rr.get('embed_image'):
+            embed.set_image(url=rr['embed_image'])
+        if rr.get('embed_thumbnail'):
+            embed.set_thumbnail(url=rr['embed_thumbnail'])
+        
+        await message.edit(embed=embed)
+        logger.info(f"Updated reaction role in {channel.name}")
+        
+    except Exception as e:
+        logger.error(f"Error updating reaction role: {e}")
+
+async def update_ticket_panel_in_channel(guild: discord.Guild, data: dict):
+    """Update an existing ticket panel embed"""
+    channel_id = data.get('channel_id')
+    message_id = data.get('message_id')
+    panel = data.get('panel', {})
+    
+    if not channel_id or not message_id:
+        return
+    
+    channel = guild.get_channel(int(channel_id))
+    if not channel:
+        return
+    
+    try:
+        message = await channel.fetch_message(int(message_id))
+        
+        # Create updated embed
+        color_str = panel.get('color', '#5865F2')
+        try:
+            embed_color = int(color_str.replace('#', ''), 16)
+        except:
+            embed_color = 0x5865F2
+        
+        embed = discord.Embed(
+            title=panel.get('title', '🎫 Support Tickets'),
+            description=panel.get('description', 'Klicke auf den Button.'),
+            color=embed_color
+        )
+        
+        if panel.get('categories'):
+            cat_text = "\n".join([f"{c.get('emoji', '•')} **{c.get('name', '')}**" for c in panel['categories']])
+            embed.add_field(name="Kategorien", value=cat_text, inline=False)
+        
+        embed.set_footer(text="Ticket System")
+        
+        await message.edit(embed=embed)
+        logger.info(f"Updated ticket panel in {channel.name}")
+        
+    except Exception as e:
+        logger.error(f"Error updating ticket panel: {e}")
+
 # ==================== TICKET COMMANDS ====================
 
 ticket_group = app_commands.Group(name="ticket", description="Ticket System Befehle")
