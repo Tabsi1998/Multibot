@@ -397,23 +397,44 @@ async def delete_reaction_roles_by_message(message_id: str) -> int:
 
 # ==================== GAMES ====================
 
-async def create_game(guild_id: str, channel_id: str, game_type: str, 
-                      player1_id: str, player2_id: str = None, state: dict = None) -> dict:
-    """Create a game"""
+async def create_game(guild_id_or_data = None, channel_id: str = None, game_type: str = None, 
+                      player1_id: str = None, player2_id: str = None, state: dict = None) -> dict:
+    """Create a game - accepts either individual params or a dict"""
     from datetime import datetime, timezone
     import uuid
-    game = {
-        "id": str(uuid.uuid4()),
-        "guild_id": guild_id,
-        "channel_id": channel_id,
-        "game_type": game_type,
-        "player1_id": player1_id,
-        "player2_id": player2_id,
-        "state": state or {},
-        "status": "waiting" if not player2_id else "active",
-        "winner_id": None,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    }
+    
+    # Support both calling patterns
+    if isinstance(guild_id_or_data, dict):
+        # Called with a dict
+        data = guild_id_or_data
+        game = {
+            "id": data.get("id") or str(uuid.uuid4()),
+            "guild_id": data.get("guild_id", ""),
+            "channel_id": data.get("channel_id", ""),
+            "message_id": data.get("message_id", ""),
+            "game_type": data.get("game_type", ""),
+            "player1_id": data.get("player1_id", ""),
+            "player2_id": data.get("player2_id"),
+            "state": data.get("state", {}),
+            "status": data.get("status", "active"),
+            "winner_id": data.get("winner_id"),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+    else:
+        # Called with individual params
+        game = {
+            "id": str(uuid.uuid4()),
+            "guild_id": guild_id_or_data or "",
+            "channel_id": channel_id or "",
+            "game_type": game_type or "",
+            "player1_id": player1_id or "",
+            "player2_id": player2_id,
+            "state": state or {},
+            "status": "waiting" if player2_id is None else "active",
+            "winner_id": None,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+    
     await games_collection.insert_one(game)
     return {k: v for k, v in game.items() if k != "_id"}
 
