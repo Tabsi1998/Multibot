@@ -1,28 +1,28 @@
-# Discord MultiBot - Ultimativer All-in-One Bot
+# Discord MultiBot - Der ultimative All-in-One Discord Bot
 
 Ein umfassender Discord-Bot mit Web-Dashboard für Moderation, Temp Voice Channels, Ticket-System, Leveling, Reaction Roles, Spiele und mehr.
 
-## Features
+## ✨ Features
 
 ### 🛡️ Moderation
-- Kick, Ban, Mute, Warn
+- Kick, Ban, Mute, Warn-System
 - Mod-Log Kanal
-- Warn-System mit Historie
+- Warn-Historie pro Benutzer
 
 ### 🎤 Temporäre Sprachkanäle
 - **Multi-Creator System**: Mehrere Creator-Kanäle pro Server
 - **Individuelle Konfiguration**: Jeder Creator mit eigenem Template
-- **Nummerierungsoptionen**: Zahlen, Buchstaben, Hochgestellt, Tiefgestellt, Römisch
+- **Nummerierungsoptionen**: Zahlen (1,2,3), Buchstaben (a,b,c), Hochgestellt (¹²³), Tiefgestellt (₁₂₃), Römisch (i,ii,iii)
 - **Position**: Oben oder unten in der Kategorie
 - **Benutzer-Berechtigungen**: Umbenennen, Limit, Sperren, Verstecken, Kicken, Erlauben, Bitrate
 
 ### 🎫 Ticket-System
 - Anpassbare Ticket-Panels mit Embeds
+- **Automatische Einbettung** bei Erstellung und Aktualisierung
 - Kategorien für verschiedene Ticket-Typen
 - Benutzerdefinierte Felder
 - Claim-System für Support-Mitarbeiter
 - Transcript-Funktion
-- Support-Rollen und Ping-Rollen
 
 ### 🏆 Leveling-System
 - Text-XP für Nachrichten
@@ -33,47 +33,46 @@ Ein umfassender Discord-Bot mit Web-Dashboard für Moderation, Temp Voice Channe
 ### 🎭 Reaction Roles
 - Button Reaction Roles (modern)
 - Emoji Reaction Roles (klassisch)
-- Anpassbare Embeds mit Vorschau
+- **Automatische Einbettung** bei Erstellung
+- Embed-Vorschau im Dashboard
 - Bis zu 10 Rollen pro Nachricht
 
 ### 🎮 Spiele (12 Spiele!)
-| Spiel | Befehl | Spieler |
-|-------|--------|---------|
-| Tic Tac Toe | `/game tictactoe @user` | 2 |
-| Stadt Land Fluss | `/game stadtlandfluss @user` | 2-4 |
-| Münzwurf | `/game coinflip` | 1 |
-| Würfeln | `/game dice [seiten]` | 1 |
-| Schere Stein Papier | `/game rps` | 1 |
-| Magische 8-Ball | `/game 8ball [frage]` | 1 |
-| Galgenmännchen | `/game hangman` | 1+ |
-| Quiz/Trivia | `/game trivia [kategorie]` | 1+ |
-| Zahlenraten | `/game numberguess` | 1 |
-| Wortkette | `/game wordchain` | 2+ |
-| Reaktionstest | `/game reaction` | 1+ |
-| Memory | `/game memory [@gegner]` | 1-2 |
+
+| Spiel | Befehl | Spieler | Kategorie |
+|-------|--------|---------|-----------|
+| Tic Tac Toe | `/game tictactoe @user` | 2 | Klassiker |
+| Stadt Land Fluss | `/game stadtlandfluss @user` | 2-4 | Wissen |
+| Schere Stein Papier | `/game rps [@user]` | 1-2 | Klassiker |
+| Münzwurf | `/game coinflip` | 1 | Zufall |
+| Würfeln | `/game dice [seiten]` | 1 | Zufall |
+| Magische 8-Ball | `/game 8ball [frage]` | 1 | Spaß |
+| Galgenmännchen | `/game hangman` | 1+ | Wissen |
+| Quiz/Trivia | `/game trivia [kategorie]` | 1+ | Wissen |
+| Zahlenraten | `/game numberguess` | 1 | Zufall |
+| Wortkette | `/game wordchain` | 2+ | Wissen |
+| Reaktionstest | `/game reaction` | 1+ | Geschick |
+| Memory | `/game memory [@user]` | 1-2 | Geschick |
 
 - Jedes Spiel individuell ein-/ausschaltbar
-- Spiele-Kanal konfigurierbar
+- Kategorie-Filter im Dashboard
 - Cooldown-System
 
 ### 👋 Willkommen & Verabschiedung
-- Anpassbare Nachrichten
+- Anpassbare Nachrichten mit Variablen
 - Auto-Rollen für neue Mitglieder
-- Variablen für Personalisierung
-
-### ⚙️ Custom Commands
-- Eigene Befehle erstellen
-- Embed-Antworten
+- **Regelbestätigung**: Rolle bei Discord Membership Screening
 
 ### 🤖 Bot-Anpassung
 - Status (Online, Abwesend, Nicht stören)
 - Aktivitätstyp (Spielt, Schaut, Hört zu)
 - Aktivitätstext
 
-## Installation
+---
 
-### Schnellstart (Ein-Befehl-Installation)
+## 🚀 Installation
 
+### Schnellstart
 ```bash
 curl -sSL https://raw.githubusercontent.com/your-repo/multibot/main/install.sh | bash
 ```
@@ -90,26 +89,21 @@ cd multibot
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# .env bearbeiten und DISCORD_BOT_TOKEN setzen
+# DISCORD_BOT_TOKEN in .env setzen
 ```
 
 3. **Frontend einrichten**
 ```bash
 cd frontend
 yarn install
-cp .env.example .env
-# .env bearbeiten
 ```
 
 4. **MongoDB starten**
 ```bash
-# Mit Docker:
 docker run -d -p 27017:27017 mongo:latest
-
-# Oder MongoDB lokal installieren
 ```
 
 5. **Services starten**
@@ -117,31 +111,22 @@ docker run -d -p 27017:27017 mongo:latest
 # Backend
 cd backend && python server.py
 
-# Frontend (neues Terminal)
+# Frontend
 cd frontend && yarn start
 ```
 
-6. **Dashboard öffnen**
-- Öffne `http://localhost:3000`
-- Registriere dich (erster Benutzer = Admin)
-- Füge deinen Bot-Token hinzu
-- Konfiguriere deinen Server
+---
 
-## Discord Bot Setup
+## 📋 Slash Commands
 
-1. Gehe zu [Discord Developer Portal](https://discord.com/developers/applications)
-2. Erstelle eine neue Application
-3. Gehe zu "Bot" → "Add Bot"
-4. Aktiviere diese Intents:
-   - Presence Intent
-   - Server Members Intent
-   - Message Content Intent
-5. Kopiere den Token und füge ihn im Dashboard ein
-6. Lade den Bot mit dem OAuth2 URL Generator ein:
-   - Scopes: `bot`, `applications.commands`
-   - Permissions: Administrator (oder spezifische Berechtigungen)
-
-## Slash Commands
+### Info
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/help` | Zeigt alle Befehle |
+| `/ping` | Bot-Latenz |
+| `/botinfo` | Bot-Informationen |
+| `/serverinfo` | Server-Statistiken |
+| `/userinfo [@user]` | Benutzer-Info |
 
 ### Moderation
 | Befehl | Beschreibung |
@@ -151,76 +136,73 @@ cd frontend && yarn start
 | `/ban @user [grund]` | Bannt einen Benutzer |
 | `/mute @user [dauer]` | Mutet einen Benutzer |
 | `/warnings @user` | Zeigt Verwarnungen |
-| `/clearwarnings @user` | Löscht alle Verwarnungen |
-
-### Leveling
-| Befehl | Beschreibung |
-|--------|--------------|
-| `/rank [@user]` | Zeigt Rang und XP |
-| `/leaderboard` | Zeigt die Rangliste |
-
-### Tickets
-| Befehl | Beschreibung |
-|--------|--------------|
-| `/ticket panel [panel_id]` | Sendet ein Ticket-Panel |
-| `/ticket claim` | Beansprucht ein Ticket |
-| `/ticket close` | Schließt ein Ticket |
-| `/ticket add @user` | Fügt Benutzer zum Ticket hinzu |
-| `/ticket remove @user` | Entfernt Benutzer vom Ticket |
-| `/ticket rename [name]` | Benennt das Ticket um |
+| `/clearwarns @user` | Löscht Verwarnungen |
 
 ### Temp Voice
 | Befehl | Beschreibung |
 |--------|--------------|
-| `/voice name [name]` | Benennt deinen Kanal um |
-| `/voice limit [anzahl]` | Setzt das Benutzerlimit |
-| `/voice lock` | Sperrt den Kanal |
-| `/voice unlock` | Entsperrt den Kanal |
-| `/voice hide` | Versteckt den Kanal |
-| `/voice show` | Zeigt den Kanal |
-| `/voice permit @user` | Erlaubt einem Benutzer den Zugang |
-| `/voice reject @user` | Verweigert einem Benutzer den Zugang |
-| `/voice kick @user` | Kickt einen Benutzer |
-| `/voice claim` | Übernimmt einen verwaisten Kanal |
+| `/vc rename [name]` | Kanal umbenennen |
+| `/vc limit [anzahl]` | Userlimit setzen |
+| `/vc lock` / `/vc unlock` | Kanal sperren/entsperren |
+| `/vc hide` / `/vc show` | Kanal verstecken/zeigen |
+| `/vc kick @user` | Benutzer kicken |
+| `/vc permit @user` | Benutzer erlauben |
+| `/vc claim` | Kanal übernehmen |
 
-### Reaction Roles
+### Tickets
 | Befehl | Beschreibung |
 |--------|--------------|
-| `/reactionrole create` | Erstellt Button Reaction Roles |
-| `/reactionrole reaction` | Fügt Emoji-Reaktionen hinzu |
-| `/reactionrole list` | Listet alle Reaction Roles |
+| `/ticket panel [id]` | Panel senden |
+| `/ticket claim` | Ticket beanspruchen |
+| `/ticket close` | Ticket schließen |
+| `/ticket add @user` | Benutzer hinzufügen |
+| `/ticket remove @user` | Benutzer entfernen |
 
-### Info
+### Leveling
 | Befehl | Beschreibung |
 |--------|--------------|
-| `/help` | Zeigt alle Befehle |
-| `/botinfo` | Zeigt Bot-Informationen |
-| `/serverinfo` | Zeigt Server-Informationen |
-| `/userinfo [@user]` | Zeigt Benutzer-Informationen |
+| `/rank [@user]` | Zeigt Rang |
+| `/leaderboard` | Rangliste |
 
-## Web Dashboard
+---
 
-Das Dashboard bietet eine moderne, Discord-ähnliche Oberfläche für:
+## 🔌 API Dokumentation
 
-- **Alle Einstellungen bearbeiten** - Jedes Panel, jeder Creator, jede Einstellung kann nachträglich bearbeitet werden
-- **Live-Vorschau** - Sehe Embeds bevor sie gesendet werden
-- **Server-Daten-Sync** - Rollen und Kanäle werden automatisch synchronisiert
-- **Statistiken** - Übersicht über Tickets, Spiele, Leveling
+Siehe [/docs/API.md](docs/API.md) für vollständige API-Dokumentation.
 
-## Technologie
+### Wichtige Endpoints:
+- `POST /api/auth/login` - Login
+- `GET/PUT /api/guilds/{id}` - Server-Konfiguration
+- `CRUD /api/guilds/{id}/temp-creators` - Temp Voice Creators
+- `CRUD /api/guilds/{id}/ticket-panels` - Ticket Panels (Auto-Send)
+- `CRUD /api/guilds/{id}/reaction-roles` - Reaction Roles (Auto-Send)
+- `CRUD /api/guilds/{id}/level-rewards` - Level Belohnungen
+
+---
+
+## 🧪 Test-Ergebnisse
+
+| Test Suite | Tests | Bestanden | Erfolgsrate |
+|------------|-------|-----------|-------------|
+| Backend API | 31 | 31 | 100% |
+| Frontend UI | 25+ | 25+ | 100% |
+
+---
+
+## 🛠️ Technologie
 
 - **Backend**: FastAPI (Python)
-- **Frontend**: React mit Tailwind CSS
+- **Frontend**: React + Tailwind CSS
 - **Datenbank**: MongoDB
 - **Bot**: discord.py
 - **Auth**: JWT
 
-## Support
+---
 
-Bei Fragen oder Problemen:
-- Erstelle ein Issue auf GitHub
-- Tritt dem Support-Discord bei
-
-## Lizenz
+## 📄 Lizenz
 
 MIT License
+
+---
+
+*Zuletzt aktualisiert: 03.01.2026*
