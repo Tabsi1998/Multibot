@@ -661,35 +661,69 @@ async def list_reaction_roles(guild_id: str):
 
 @api_router.post("/guilds/{guild_id}/reaction-roles")
 async def create_reaction_role_api(guild_id: str, rr: ReactionRoleCreate):
-    """Create a reaction role setup"""
-    from database import create_reaction_role
+    """Create a reaction role setup and automatically send to Discord"""
+    from database import create_reaction_role, add_pending_action
     import uuid
     
-    # For web-created reaction roles, we store the config
-    # The actual Discord message will be created by the bot when it connects
-    results = []
-    for role_config in rr.roles:
-        result = await create_reaction_role(
-            guild_id=guild_id,
-            channel_id=rr.channel_id,
-            message_id="pending",  # Will be set when bot creates the message
-            emoji=role_config.get("emoji", ""),
-            role_id=role_config.get("role_id", ""),
-            role_type=rr.type,
-            title=rr.title,
-            description=rr.description
-        )
-        results.append(result)
+    # Create single reaction role with all roles embedded
+    rr_id = str(uuid.uuid4())
+    rr_data = {
+        "id": rr_id,
+        "guild_id": guild_id,
+        "channel_id": rr.channel_id,
+        "message_id": "pending",
+        "title": rr.title,
+        "description": rr.description,
+        "color": getattr(rr, 'color', '#5865F2'),
+        "role_type": rr.type,
+        "roles": rr.roles,
+        "embed_image": getattr(rr, 'embed_image', ''),
+        "embed_thumbnail": getattr(rr, 'embed_thumbnail', ''),
+    }
     
-    return {"created": len(results), "reaction_roles": results}
+    # Also store first role for backwards compatibility
+    if rr.roles:
+        rr_data["emoji"] = rr.roles[0].get("emoji", "")
+        rr_data["role_id"] = rr.roles[0].get("role_id", "")
+    
+    await db.reaction_roles.insert_one(rr_data)
+    result = {k: v for k, v in rr_data.items() if k != "_id"}
+    
+    # Automatically send to Discord
+    if rr.channel_id:
+        await add_pending_action(
+            "send_reaction_role",
+            guild_id,
+            {
+                "rr_id": rr_id,
+                "channel_id": rr.channel_id,
+                "reaction_role": result
+            }
+        )
+    
+    return {"created": 1, "reaction_roles": [result]}
 
 @api_router.put("/guilds/{guild_id}/reaction-roles/{rr_id}")
 async def update_reaction_role(guild_id: str, rr_id: str, data: dict):
-    """Update a reaction role"""
-    from database import update_reaction_role
+    """Update a reaction role and automatically update in Discord"""
+    from database import update_reaction_role, add_pending_action
     updated = await update_reaction_role(rr_id, data)
     if not updated:
         raise HTTPException(status_code=404, detail="Reaction role not found")
+    
+    # If has message_id, update in Discord
+    if updated.get('message_id') and updated.get('message_id') != 'pending':
+        await add_pending_action(
+            "update_reaction_role",
+            guild_id,
+            {
+                "rr_id": rr_id,
+                "channel_id": updated.get('channel_id'),
+                "message_id": updated.get('message_id'),
+                "reaction_role": updated
+            }
+        )
+    
     return {"updated": True, **updated}
 
 @api_router.delete("/guilds/{guild_id}/reaction-roles/{rr_id}")
