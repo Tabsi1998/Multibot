@@ -738,7 +738,7 @@ async def remove_reaction_role(guild_id: str, rr_id: str):
 @api_router.post("/guilds/{guild_id}/reaction-roles/{rr_id}/send")
 async def send_reaction_role_embed(guild_id: str, rr_id: str, channel_id: str = None):
     """Queue a reaction role to be sent to Discord"""
-    from database import add_pending_action, get_reaction_role_by_id
+    from database import add_pending_action
     
     # Get the reaction role
     rr = await db.reaction_roles.find_one({"id": rr_id}, {"_id": 0})
