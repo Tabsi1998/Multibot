@@ -701,6 +701,33 @@ async def remove_reaction_role(guild_id: str, rr_id: str):
         raise HTTPException(status_code=404, detail="Reaction role not found")
     return {"deleted": True}
 
+@api_router.post("/guilds/{guild_id}/reaction-roles/{rr_id}/send")
+async def send_reaction_role_embed(guild_id: str, rr_id: str, channel_id: str = None):
+    """Queue a reaction role to be sent to Discord"""
+    from database import add_pending_action, get_reaction_role_by_id
+    
+    # Get the reaction role
+    rr = await db.reaction_roles.find_one({"id": rr_id}, {"_id": 0})
+    if not rr:
+        raise HTTPException(status_code=404, detail="Reaction role not found")
+    
+    target_channel = channel_id or rr.get('channel_id')
+    if not target_channel:
+        raise HTTPException(status_code=400, detail="Kein Kanal angegeben")
+    
+    # Add pending action for bot to execute
+    action_id = await add_pending_action(
+        "send_reaction_role",
+        guild_id,
+        {
+            "rr_id": rr_id,
+            "channel_id": target_channel,
+            "reaction_role": rr
+        }
+    )
+    
+    return {"queued": True, "action_id": action_id, "message": "Reaction Role wird gesendet..."}
+
 # ==================== GAMES API ====================
 
 @api_router.get("/guilds/{guild_id}/games")
