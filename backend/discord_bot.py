@@ -1153,6 +1153,19 @@ async def botinfo(interaction: discord.Interaction):
     embed.set_footer(text="MultiBot - Der ultimative All-in-One Discord Bot")
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="ping", description="Zeigt die Bot-Latenz")
+async def ping(interaction: discord.Interaction):
+    """Show bot latency"""
+    latency = round(bot.latency * 1000)
+    
+    embed = discord.Embed(
+        title="🏓 Pong!",
+        description=f"**Latenz:** {latency}ms",
+        color=discord.Color.green() if latency < 100 else discord.Color.yellow() if latency < 200 else discord.Color.red()
+    )
+    
+    await interaction.response.send_message(embed=embed)
+
 @bot.tree.command(name="serverinfo", description="Zeigt Server Statistiken")
 async def serverinfo(interaction: discord.Interaction):
     guild = interaction.guild
