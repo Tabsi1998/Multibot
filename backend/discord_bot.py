@@ -2334,6 +2334,10 @@ async def process_pending_actions():
                     await send_reaction_role_to_channel(guild, data)
                 elif action_type == "send_ticket_panel":
                     await send_ticket_panel_to_channel(guild, data)
+                elif action_type == "update_reaction_role":
+                    await update_reaction_role_in_channel(guild, data)
+                elif action_type == "update_ticket_panel":
+                    await update_ticket_panel_in_channel(guild, data)
                 
                 await mark_action_complete(action['id'])
                 logger.info(f"Processed action: {action_type}")
