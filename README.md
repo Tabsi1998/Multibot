@@ -1,354 +1,226 @@
-# Discord MultiBot Command Center
+# Discord MultiBot - Ultimativer All-in-One Bot
 
-<div align="center">
+Ein umfassender Discord-Bot mit Web-Dashboard für Moderation, Temp Voice Channels, Ticket-System, Leveling, Reaction Roles, Spiele und mehr.
 
-![MultiBot Logo](https://img.shields.io/badge/MultiBot-Command%20Center-5865F2?style=for-the-badge&logo=discord&logoColor=white)
+## Features
 
-**Der ultimative All-in-One Discord Bot mit Web-Dashboard**
+### 🛡️ Moderation
+- Kick, Ban, Mute, Warn
+- Mod-Log Kanal
+- Warn-System mit Historie
 
-[🇩🇪 Deutsch](#deutsch) | [🇬🇧 English](#english)
+### 🎤 Temporäre Sprachkanäle
+- **Multi-Creator System**: Mehrere Creator-Kanäle pro Server
+- **Individuelle Konfiguration**: Jeder Creator mit eigenem Template
+- **Nummerierungsoptionen**: Zahlen, Buchstaben, Hochgestellt, Tiefgestellt, Römisch
+- **Position**: Oben oder unten in der Kategorie
+- **Benutzer-Berechtigungen**: Umbenennen, Limit, Sperren, Verstecken, Kicken, Erlauben, Bitrate
 
-</div>
+### 🎫 Ticket-System
+- Anpassbare Ticket-Panels mit Embeds
+- Kategorien für verschiedene Ticket-Typen
+- Benutzerdefinierte Felder
+- Claim-System für Support-Mitarbeiter
+- Transcript-Funktion
+- Support-Rollen und Ping-Rollen
 
----
+### 🏆 Leveling-System
+- Text-XP für Nachrichten
+- Voice-XP für Zeit in Sprachkanälen
+- Level-Belohnungen (Rollen & Emojis)
+- Rangliste
 
-## 🚀 One-Command Installation (VOLLAUTOMATISCH)
+### 🎭 Reaction Roles
+- Button Reaction Roles (modern)
+- Emoji Reaction Roles (klassisch)
+- Anpassbare Embeds mit Vorschau
+- Bis zu 10 Rollen pro Nachricht
+
+### 🎮 Spiele (12 Spiele!)
+| Spiel | Befehl | Spieler |
+|-------|--------|---------|
+| Tic Tac Toe | `/game tictactoe @user` | 2 |
+| Stadt Land Fluss | `/game stadtlandfluss @user` | 2-4 |
+| Münzwurf | `/game coinflip` | 1 |
+| Würfeln | `/game dice [seiten]` | 1 |
+| Schere Stein Papier | `/game rps` | 1 |
+| Magische 8-Ball | `/game 8ball [frage]` | 1 |
+| Galgenmännchen | `/game hangman` | 1+ |
+| Quiz/Trivia | `/game trivia [kategorie]` | 1+ |
+| Zahlenraten | `/game numberguess` | 1 |
+| Wortkette | `/game wordchain` | 2+ |
+| Reaktionstest | `/game reaction` | 1+ |
+| Memory | `/game memory [@gegner]` | 1-2 |
+
+- Jedes Spiel individuell ein-/ausschaltbar
+- Spiele-Kanal konfigurierbar
+- Cooldown-System
+
+### 👋 Willkommen & Verabschiedung
+- Anpassbare Nachrichten
+- Auto-Rollen für neue Mitglieder
+- Variablen für Personalisierung
+
+### ⚙️ Custom Commands
+- Eigene Befehle erstellen
+- Embed-Antworten
+
+### 🤖 Bot-Anpassung
+- Status (Online, Abwesend, Nicht stören)
+- Aktivitätstyp (Spielt, Schaut, Hört zu)
+- Aktivitätstext
+
+## Installation
+
+### Schnellstart (Ein-Befehl-Installation)
 
 ```bash
-git clone https://github.com/your-repo/multibot-command-center.git
-cd multibot-command-center
-chmod +x install.sh && ./install.sh
-./start.sh
+curl -sSL https://raw.githubusercontent.com/your-repo/multibot/main/install.sh | bash
 ```
 
-**Der Installer installiert ALLES automatisch:**
-- Python 3.11+ / Node.js 20.x / MongoDB 7.0 / Yarn
-- Alle Python- und Node.js-Pakete
-- Erstellt Start/Stop/Restart/Status Scripts
+### Manuelle Installation
 
-Nach dem Start:
-- **Lokal:** http://localhost:3000
-- **Netzwerk:** http://DEINE-IP:3000
+1. **Repository klonen**
+```bash
+git clone https://github.com/your-repo/multibot.git
+cd multibot
+```
 
-Registriere dich - **der erste Benutzer wird automatisch Administrator!** 👑
+2. **Backend einrichten**
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env
+# .env bearbeiten und DISCORD_BOT_TOKEN setzen
+```
 
----
+3. **Frontend einrichten**
+```bash
+cd frontend
+yarn install
+cp .env.example .env
+# .env bearbeiten
+```
 
-## Deutsch
+4. **MongoDB starten**
+```bash
+# Mit Docker:
+docker run -d -p 27017:27017 mongo:latest
 
-### 📋 Inhaltsverzeichnis
+# Oder MongoDB lokal installieren
+```
 
-- [Über das Projekt](#über-das-projekt)
-- [Features](#features)
-- [Installation](#installation)
-- [Konfiguration](#konfiguration)
-- [Bot Commands](#bot-commands)
-- [Web Dashboard](#web-dashboard)
-- [API Dokumentation](#api-dokumentation)
+5. **Services starten**
+```bash
+# Backend
+cd backend && python server.py
 
-### Über das Projekt
+# Frontend (neues Terminal)
+cd frontend && yarn start
+```
 
-MultiBot Command Center ist ein umfassender Discord-Bot mit Web-Dashboard, der die Funktionen von MEE6, Sapphire und anderen populären Bots in einem einzigen Bot vereint. Konfigurierbar über Slash-Commands UND Web-Interface.
+6. **Dashboard öffnen**
+- Öffne `http://localhost:3000`
+- Registriere dich (erster Benutzer = Admin)
+- Füge deinen Bot-Token hinzu
+- Konfiguriere deinen Server
 
-### Features
+## Discord Bot Setup
 
-| Feature | Beschreibung |
-|---------|-------------|
-| 🛡️ **Moderation** | Warn, Kick, Ban, Mute mit automatischen Aktionen |
-| 🔑 **Berechtigungen** | Rollenbasierte Command-Berechtigungen |
-| 🎤 **Temp Kanäle** | Automatische Voice-Kanäle |
-| 🏆 **Leveling** | XP-System mit Level-Rollen |
-| 👋 **Willkommen** | Begrüßungsnachrichten & Auto-Rollen |
-| 💬 **Custom Commands** | Eigene Text-Commands |
-| 🤖 **KI-Chat** | ChatGPT-Integration |
-| 📰 **News** | Geplante Ankündigungen |
-| 🔐 **Login-System** | Benutzer-Authentifizierung mit JWT |
-| 👑 **Admin-System** | Erster Benutzer = Administrator |
-
-### Installation
-
-#### Voraussetzungen
-
-- Python 3.11+
-- Node.js 18+
-- MongoDB
-- Discord Bot Token
-
-#### Schritt 1: Bot erstellen
-
-1. Gehe zum [Discord Developer Portal](https://discord.com/developers/applications)
-2. Klicke auf "New Application"
+1. Gehe zu [Discord Developer Portal](https://discord.com/developers/applications)
+2. Erstelle eine neue Application
 3. Gehe zu "Bot" → "Add Bot"
-4. Aktiviere unter "Privileged Gateway Intents":
-   - ✅ SERVER MEMBERS INTENT
-   - ✅ MESSAGE CONTENT INTENT
-5. Kopiere den Bot Token
-
-#### Schritt 2: Bot einladen
-
-Erstelle eine Einladungs-URL unter OAuth2 → URL Generator:
-- Scopes: `bot`, `applications.commands`
-- Permissions: `Administrator`
-
-#### Schritt 3: Konfiguration
-
-1. Öffne das Web-Dashboard (http://localhost:3000)
-2. **Registriere dich** - Der erste Benutzer wird automatisch Admin!
-3. Gehe zu "Einstellungen"
-4. Füge deinen Discord Bot Token ein
-5. Optional: Füge deinen OpenAI API Key hinzu
-6. Speichere und starte den Bot
-
-### Konfiguration
-
-#### Umgebungsvariablen
-
-| Variable | Beschreibung | Erforderlich |
-|----------|-------------|--------------|
-| `DISCORD_BOT_TOKEN` | Dein Discord Bot Token | ✅ |
-| `OPENAI_API_KEY` | OpenAI API Key für KI-Chat | ❌ |
-| `MONGO_URL` | MongoDB Verbindungs-URL | ✅ |
-| `DB_NAME` | Datenbankname | ✅ |
-
-### Bot Commands
-
-#### Moderation
-
-| Command | Beschreibung | Berechtigung |
-|---------|-------------|--------------|
-| `/warn <user> [grund]` | Benutzer verwarnen | Kick Members |
-| `/warnings <user>` | Verwarnungen anzeigen | - |
-| `/clearwarnings <user>` | Verwarnungen löschen | Kick Members |
-| `/kick <user> [grund]` | Benutzer kicken | Kick Members |
-| `/ban <user> [grund]` | Benutzer bannen | Ban Members |
-| `/mute <user> [dauer] [grund]` | Benutzer stummschalten | Moderate Members |
-| `/unmute <user>` | Stummschaltung aufheben | Moderate Members |
-
-#### Leveling
-
-| Command | Beschreibung |
-|---------|-------------|
-| `/rank [user]` | Zeigt Rang und XP |
-| `/leaderboard` | Zeigt die XP-Rangliste |
-
-#### Info
-
-| Command | Beschreibung |
-|---------|-------------|
-| `/serverinfo` | Server-Informationen |
-| `/userinfo [user]` | Benutzer-Informationen |
-
-### Web Dashboard
-
-Das Web-Dashboard bietet eine intuitive Oberfläche zur Konfiguration aller Bot-Funktionen:
-
-#### Seiten
-
-1. **Dashboard** - Übersicht, Bot-Steuerung, Statistiken
-2. **Moderation** - Verwarnungs-Einstellungen, Mod-Logs
-3. **Berechtigungen** - Admin/Mod Rollen verwalten
-4. **Temp Kanäle** - Voice-Kanal Erstellung konfigurieren
-5. **Leveling** - XP-System, Level-Rollen
-6. **Willkommen** - Begrüßung, Auto-Rollen
-7. **Commands** - Custom Commands erstellen
-8. **KI Chat** - ChatGPT-Integration
-9. **News** - Ankündigungen verwalten
-10. **Einstellungen** - Token, Sprache, Prefix
-
----
-
-## English
-
-### 📋 Table of Contents
-
-- [About](#about)
-- [Features](#features-1)
-- [Installation](#installation-1)
-- [Configuration](#configuration)
-- [Bot Commands](#bot-commands-1)
-- [Web Dashboard](#web-dashboard-1)
-- [API Documentation](#api-documentation)
-
-### About
-
-MultiBot Command Center is a comprehensive Discord bot with web dashboard that combines features from MEE6, Sapphire and other popular bots into a single solution. Configurable via slash commands AND web interface.
-
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| 🛡️ **Moderation** | Warn, Kick, Ban, Mute with automatic actions |
-| 🔑 **Permissions** | Role-based command permissions |
-| 🎤 **Temp Channels** | Automatic voice channels |
-| 🏆 **Leveling** | XP system with level roles |
-| 👋 **Welcome** | Welcome messages & auto-roles |
-| 💬 **Custom Commands** | Create your own text commands |
-| 🤖 **AI Chat** | ChatGPT integration |
-| 📰 **News** | Scheduled announcements |
-
-### Installation
-
-#### Prerequisites
-
-- Python 3.11+
-- Node.js 18+
-- MongoDB
-- Discord Bot Token
-
-#### Step 1: Create Bot
-
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click "New Application"
-3. Go to "Bot" → "Add Bot"
-4. Enable under "Privileged Gateway Intents":
-   - ✅ SERVER MEMBERS INTENT
-   - ✅ MESSAGE CONTENT INTENT
-5. Copy the Bot Token
-
-#### Step 2: Invite Bot
-
-Create an invite URL under OAuth2 → URL Generator:
-- Scopes: `bot`, `applications.commands`
-- Permissions: `Administrator`
-
-#### Step 3: Configuration
-
-1. Open the web dashboard
-2. Go to "Settings"
-3. Enter your Discord Bot Token
-4. Optional: Add your OpenAI API Key
-5. Save and start the bot
-
-### Configuration
-
-#### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DISCORD_BOT_TOKEN` | Your Discord Bot Token | ✅ |
-| `OPENAI_API_KEY` | OpenAI API Key for AI chat | ❌ |
-| `MONGO_URL` | MongoDB connection URL | ✅ |
-| `DB_NAME` | Database name | ✅ |
-
-### Bot Commands
-
-#### Moderation
-
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/warn <user> [reason]` | Warn a user | Kick Members |
-| `/warnings <user>` | Show warnings | - |
-| `/clearwarnings <user>` | Clear warnings | Kick Members |
-| `/kick <user> [reason]` | Kick a user | Kick Members |
-| `/ban <user> [reason]` | Ban a user | Ban Members |
-| `/mute <user> [duration] [reason]` | Mute a user | Moderate Members |
-| `/unmute <user>` | Unmute a user | Moderate Members |
-
-#### Leveling
-
-| Command | Description |
-|---------|-------------|
-| `/rank [user]` | Shows rank and XP |
-| `/leaderboard` | Shows XP leaderboard |
-
-#### Info
-
-| Command | Description |
-|---------|-------------|
-| `/serverinfo` | Server information |
-| `/userinfo [user]` | User information |
-
-### Web Dashboard
-
-The web dashboard provides an intuitive interface for configuring all bot features:
-
-#### Pages
-
-1. **Dashboard** - Overview, bot controls, statistics
-2. **Moderation** - Warning settings, mod logs
-3. **Permissions** - Manage admin/mod roles
-4. **Temp Channels** - Configure voice channel creation
-5. **Leveling** - XP system, level roles
-6. **Welcome** - Greeting messages, auto-roles
-7. **Commands** - Create custom commands
-8. **AI Chat** - ChatGPT integration
-9. **News** - Manage announcements
-10. **Settings** - Token, language, prefix
-
----
-
-## API Documentation
-
-### Base URL
-```
-https://your-domain.com/api
-```
-
-### Endpoints
-
-#### Bot Management
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/bot/status` | Get bot status |
-| POST | `/bot/configure` | Configure bot tokens |
-| POST | `/bot/start` | Start the bot |
-| POST | `/bot/stop` | Stop the bot |
-
-#### Guild Configuration
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds` | List all guilds |
-| GET | `/guilds/{id}` | Get guild config |
-| PUT | `/guilds/{id}` | Update guild config |
-| GET | `/guilds/{id}/stats` | Get guild statistics |
-
-#### Moderation
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds/{id}/warnings` | List warnings |
-| DELETE | `/guilds/{id}/warnings/{user_id}` | Clear user warnings |
-| GET | `/guilds/{id}/modlogs` | Get moderation logs |
-
-#### Leveling
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds/{id}/leaderboard` | Get XP leaderboard |
-| GET | `/guilds/{id}/users/{user_id}` | Get user data |
-| PUT | `/guilds/{id}/users/{user_id}` | Update user XP/level |
-
-#### Custom Commands
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds/{id}/commands` | List commands |
-| POST | `/guilds/{id}/commands` | Create command |
-| DELETE | `/guilds/{id}/commands/{name}` | Delete command |
-
-#### News
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds/{id}/news` | List news |
-| POST | `/guilds/{id}/news` | Create news |
-| DELETE | `/guilds/{id}/news/{news_id}` | Delete news |
-
-#### Permissions
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/guilds/{id}/permissions` | Get permissions |
-| PUT | `/guilds/{id}/permissions` | Update permissions |
-
----
-
-## License
-
-MIT License - Siehe [LICENSE](LICENSE) für Details.
+4. Aktiviere diese Intents:
+   - Presence Intent
+   - Server Members Intent
+   - Message Content Intent
+5. Kopiere den Token und füge ihn im Dashboard ein
+6. Lade den Bot mit dem OAuth2 URL Generator ein:
+   - Scopes: `bot`, `applications.commands`
+   - Permissions: Administrator (oder spezifische Berechtigungen)
+
+## Slash Commands
+
+### Moderation
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/warn @user [grund]` | Verwarnt einen Benutzer |
+| `/kick @user [grund]` | Kickt einen Benutzer |
+| `/ban @user [grund]` | Bannt einen Benutzer |
+| `/mute @user [dauer]` | Mutet einen Benutzer |
+| `/warnings @user` | Zeigt Verwarnungen |
+| `/clearwarnings @user` | Löscht alle Verwarnungen |
+
+### Leveling
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/rank [@user]` | Zeigt Rang und XP |
+| `/leaderboard` | Zeigt die Rangliste |
+
+### Tickets
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/ticket panel [panel_id]` | Sendet ein Ticket-Panel |
+| `/ticket claim` | Beansprucht ein Ticket |
+| `/ticket close` | Schließt ein Ticket |
+| `/ticket add @user` | Fügt Benutzer zum Ticket hinzu |
+| `/ticket remove @user` | Entfernt Benutzer vom Ticket |
+| `/ticket rename [name]` | Benennt das Ticket um |
+
+### Temp Voice
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/voice name [name]` | Benennt deinen Kanal um |
+| `/voice limit [anzahl]` | Setzt das Benutzerlimit |
+| `/voice lock` | Sperrt den Kanal |
+| `/voice unlock` | Entsperrt den Kanal |
+| `/voice hide` | Versteckt den Kanal |
+| `/voice show` | Zeigt den Kanal |
+| `/voice permit @user` | Erlaubt einem Benutzer den Zugang |
+| `/voice reject @user` | Verweigert einem Benutzer den Zugang |
+| `/voice kick @user` | Kickt einen Benutzer |
+| `/voice claim` | Übernimmt einen verwaisten Kanal |
+
+### Reaction Roles
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/reactionrole create` | Erstellt Button Reaction Roles |
+| `/reactionrole reaction` | Fügt Emoji-Reaktionen hinzu |
+| `/reactionrole list` | Listet alle Reaction Roles |
+
+### Info
+| Befehl | Beschreibung |
+|--------|--------------|
+| `/help` | Zeigt alle Befehle |
+| `/botinfo` | Zeigt Bot-Informationen |
+| `/serverinfo` | Zeigt Server-Informationen |
+| `/userinfo [@user]` | Zeigt Benutzer-Informationen |
+
+## Web Dashboard
+
+Das Dashboard bietet eine moderne, Discord-ähnliche Oberfläche für:
+
+- **Alle Einstellungen bearbeiten** - Jedes Panel, jeder Creator, jede Einstellung kann nachträglich bearbeitet werden
+- **Live-Vorschau** - Sehe Embeds bevor sie gesendet werden
+- **Server-Daten-Sync** - Rollen und Kanäle werden automatisch synchronisiert
+- **Statistiken** - Übersicht über Tickets, Spiele, Leveling
+
+## Technologie
+
+- **Backend**: FastAPI (Python)
+- **Frontend**: React mit Tailwind CSS
+- **Datenbank**: MongoDB
+- **Bot**: discord.py
+- **Auth**: JWT
 
 ## Support
 
-Bei Fragen oder Problemen erstelle ein Issue oder kontaktiere uns auf Discord.
+Bei Fragen oder Problemen:
+- Erstelle ein Issue auf GitHub
+- Tritt dem Support-Discord bei
+
+## Lizenz
+
+MIT License
