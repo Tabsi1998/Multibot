@@ -177,6 +177,9 @@ class GuildConfigUpdate(BaseModel):
     # Games
     games_enabled: Optional[bool] = None
     games_channel: Optional[str] = None
+    disabled_games: Optional[List[str]] = None
+    game_cooldown: Optional[int] = None
+    max_active_games: Optional[int] = None
 
 class CustomCommandCreate(BaseModel):
     name: str
