@@ -602,6 +602,15 @@ export default function ReactionRoles() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
+                        onClick={() => sendReactionRole(rr.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-[#23A559] hover:text-[#23A559] hover:bg-[#23A559]/10"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
+                        Senden
+                      </Button>
+                      <Button
                         onClick={() => openEditDialog(rr)}
                         variant="ghost"
                         size="icon"
