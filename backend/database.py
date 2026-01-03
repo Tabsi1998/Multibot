@@ -854,3 +854,47 @@ def get_numbering(number: int, numbering_type: str) -> str:
         return result.lower()
     else:  # number
         return str(number)
+
+
+# ==================== PENDING ACTIONS ====================
+
+async def add_pending_action(action_type: str, guild_id: str, data: dict) -> str:
+    """Add a pending action for the bot to execute"""
+    from datetime import datetime, timezone
+    import uuid
+    
+    action = {
+        "id": str(uuid.uuid4()),
+        "type": action_type,
+        "guild_id": guild_id,
+        "data": data,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await pending_actions_collection.insert_one(action)
+    return action["id"]
+
+async def get_pending_actions() -> list:
+    """Get all pending actions"""
+    actions = await pending_actions_collection.find(
+        {"status": "pending"}
+    ).to_list(100)
+    return [{k: v for k, v in a.items() if k != "_id"} for a in actions]
+
+async def mark_action_complete(action_id: str) -> bool:
+    """Mark an action as complete"""
+    result = await pending_actions_collection.update_one(
+        {"id": action_id},
+        {"$set": {"status": "complete"}}
+    )
+    return result.modified_count > 0
+
+async def delete_old_actions() -> int:
+    """Delete actions older than 1 hour"""
+    from datetime import datetime, timezone, timedelta
+    cutoff = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+    result = await pending_actions_collection.delete_many(
+        {"created_at": {"$lt": cutoff}}
+    )
+    return result.deleted_count
+
