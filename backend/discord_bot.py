@@ -795,6 +795,35 @@ async def on_member_remove(member):
             await channel.send(message)
 
 @bot.event
+async def on_member_update(before: discord.Member, after: discord.Member):
+    """Handle member updates - including membership screening completion"""
+    # Check if member completed membership screening (rules acceptance)
+    if before.pending and not after.pending:
+        # Member accepted the rules!
+        config = await get_guild_config(str(after.guild.id))
+        
+        # Give role after rules acceptance
+        rules_role_id = config.get('rules_accept_role')
+        if rules_role_id:
+            role = after.guild.get_role(int(rules_role_id))
+            if role:
+                try:
+                    await after.add_roles(role, reason="Regeln akzeptiert")
+                    logger.info(f'{after.name} accepted rules, gave role {role.name}')
+                except Exception as e:
+                    logger.error(f'Error giving rules role: {e}')
+        
+        # Also give auto roles if configured to wait for rules
+        if config.get('auto_roles_after_rules'):
+            for role_id in config.get('auto_roles', []):
+                role = after.guild.get_role(int(role_id))
+                if role:
+                    try:
+                        await after.add_roles(role)
+                    except:
+                        pass
+
+@bot.event
 async def on_message(message):
     if message.author.bot:
         return
