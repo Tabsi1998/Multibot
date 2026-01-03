@@ -244,7 +244,7 @@ export default function TempChannels() {
                     guildId={guildId}
                   />
                   <p className="text-xs text-gray-500">
-                    z.B. "🎮 Valorant erstellen"
+                    z.B. 🎮 Valorant erstellen
                   </p>
                 </div>
 
