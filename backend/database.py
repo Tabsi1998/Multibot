@@ -21,6 +21,7 @@ mod_logs_collection = db.mod_logs
 temp_channels_collection = db.temp_channels
 reaction_roles_collection = db.reaction_roles
 games_collection = db.games
+pending_actions_collection = db.pending_actions  # For bot actions from API
 
 # Default guild config
 DEFAULT_GUILD_CONFIG = {
