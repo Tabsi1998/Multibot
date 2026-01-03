@@ -1073,39 +1073,53 @@ async def help_command(interaction: discord.Interaction):
     # Moderation
     embed.add_field(
         name="🛡️ Moderation",
-        value="`/warn` - Benutzer verwarnen\n`/kick` - Benutzer kicken\n`/ban` - Benutzer bannen\n`/mute` - Benutzer stummschalten\n`/warnings` - Verwarnungen anzeigen\n`/clearwarns` - Verwarnungen löschen",
+        value="`/warn` `/kick` `/ban` `/mute` `/unmute`\n`/warnings` `/clearwarns`",
         inline=False
     )
     
     # Temp Channels
     embed.add_field(
         name="🎤 Temp Voice Channels",
-        value="`/vc rename` - Kanal umbenennen\n`/vc limit` - Userlimit setzen\n`/vc lock` - Kanal sperren\n`/vc unlock` - Kanal entsperren\n`/vc kick` - Benutzer kicken\n`/vc permit` - Benutzer erlauben\n`/vc claim` - Kanal übernehmen",
+        value="`/vc rename` `/vc limit` `/vc lock` `/vc unlock`\n`/vc kick` `/vc permit` `/vc reject` `/vc claim`\n`/vc hide` `/vc show` `/vc bitrate` `/vc info`",
+        inline=False
+    )
+    
+    # Tickets
+    embed.add_field(
+        name="🎫 Tickets",
+        value="`/ticket panel` - Panel senden\n`/ticket claim` `/ticket close`\n`/ticket add` `/ticket remove` `/ticket rename`",
         inline=False
     )
     
     # Leveling
     embed.add_field(
         name="🏆 Leveling",
-        value="`/rank` - Zeigt deinen Rang\n`/leaderboard` - Top 10 Rangliste",
+        value="`/rank` - Zeigt deinen Rang\n`/leaderboard` - Top Rangliste",
         inline=False
     )
     
     # Games
     embed.add_field(
-        name="🎮 Spiele",
-        value="`/game tictactoe` - TicTacToe spielen\n`/game stadtlandfluss` - Stadt Land Fluss\n`/game coinflip` - Münzwurf\n`/game dice` - Würfeln\n`/game rps` - Schere Stein Papier\n`/game 8ball` - Magische 8-Ball",
+        name="🎮 Spiele (12 verfügbar)",
+        value="**Mehrspieler:** `/game tictactoe` `/game stadtlandfluss` `/game rps` `/game memory`\n**Einzel:** `/game coinflip` `/game dice` `/game 8ball`\n**Quiz:** `/game trivia` `/game hangman` `/game numberguess`\n**Reaktion:** `/game reaction` `/game wordchain`",
+        inline=False
+    )
+    
+    # Reaction Roles
+    embed.add_field(
+        name="🎭 Reaction Roles",
+        value="`/reactionrole create` `/reactionrole list`",
         inline=False
     )
     
     # Info
     embed.add_field(
         name="ℹ️ Informationen",
-        value="`/help` - Diese Hilfe\n`/botinfo` - Bot Informationen\n`/serverinfo` - Server Statistiken\n`/userinfo` - Benutzer Info",
+        value="`/help` `/botinfo` `/serverinfo` `/userinfo` `/ping`",
         inline=False
     )
     
-    embed.set_footer(text=f"MultiBot v1.0 | Prefix: {config.get('prefix', '!')}")
+    embed.set_footer(text=f"MultiBot v2.0 | Dashboard: emergent.sh")
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="botinfo", description="Zeigt Informationen über den Bot")
