@@ -77,6 +77,9 @@ DEFAULT_GUILD_CONFIG = {
     # Games
     "games_enabled": True,
     "games_channel": None,
+    "disabled_games": [],
+    "game_cooldown": 30,
+    "max_active_games": 5,
     # Bot Info
     "bot_status": "online",  # online, idle, dnd, invisible
     "bot_activity_type": "playing",  # playing, watching, listening, competing
