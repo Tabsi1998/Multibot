@@ -143,6 +143,17 @@ export default function ReactionRoles() {
     }
   };
 
+  const sendReactionRole = async (id) => {
+    try {
+      await axios.post(`${API}/guilds/${guildId}/reaction-roles/${id}/send`, {}, {
+        headers: getAuthHeader(),
+      });
+      toast.success("Reaction Role wird in Discord gesendet!");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Fehler beim Senden");
+    }
+  };
+
   const resetNewRR = () => {
     setNewRR({
       title: "🎭 Wähle deine Rollen",
